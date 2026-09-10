@@ -1,5 +1,3 @@
-/** @jest-environment ./src/utils/enableVersionCheck.ts */
-
 import { createTestNode, Defer, delay, jsonTestEvents } from "@test-utils";
 import {
   NodeTracerProvider,
@@ -10,36 +8,40 @@ import {
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from "@opentelemetry/semantic-conventions";
-import { KurrentDBInstrumentation } from "@kurrent/opentelemetry";
-import { KurrentAttributes } from "@kurrent/opentelemetry/dist/attributes";
-import { randomUUID as v4 } from "crypto";
+import { TrogonEventStoreInstrumentation } from "@trogonstack/trogon-eventstore-opentelemetry";
+import { TrogonEventStoreAttributes } from "@trogonstack/trogon-eventstore-opentelemetry/dist/attributes";
+import { randomUUID as v4 } from "node:crypto";
 import { collect } from "@test-utils";
 
 const tracerProvider = new NodeTracerProvider();
 tracerProvider.register();
 
-const instrumentation = new KurrentDBInstrumentation();
+const instrumentation = new TrogonEventStoreInstrumentation();
 instrumentation.disable();
 
-import * as kdb from "@kurrent/kurrentdb-client";
+import * as trogonEventStore from "@trogonstack/trogon-eventstore-client";
 import {
   AppendToStreamOptions,
-  isBasicCredentials,
   ResolvedEvent,
   streamNameFilter,
   WrongExpectedVersionError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("instrumentation", () => {
   const node = createTestNode();
-  const moduleName = "@kurrent/opentelemetry";
+  const moduleName = "@trogonstack/trogon-eventstore-opentelemetry";
 
   const memoryExporter = new InMemorySpanExporter();
   instrumentation.setTracerProvider(tracerProvider);
   tracerProvider.addSpanProcessor(new SimpleSpanProcessor(memoryExporter));
 
+  test("supports the current pre-1.0 client line", () => {
+    // @ts-expect-error Keep version gating covered despite OpenTelemetry hiding its definition.
+    expect(instrumentation._modules[0].supportedVersions).toContain("0.*");
+  });
+
   // @ts-expect-error the moduleExports property is private. This is needed to make the test work with auto-mocking
-  instrumentation._modules[0].moduleExports = kdb;
+  instrumentation._modules[0].moduleExports = trogonEventStore;
 
   beforeAll(async () => {
     await node.up();
@@ -60,21 +62,18 @@ describe("instrumentation", () => {
       { withCredentials: false, credentials: undefined },
       {
         withCredentials: true,
-        credentials: {
-          username: "admin",
-          password: "changeit",
-        },
+        credentials: { username: "admin", password: "changeit" },
       },
     ])(
       "should create a span for append operation, withCredentials: $withCredentials",
       async ({ withCredentials, credentials }) => {
-        const { KurrentDBClient, jsonEvent } = await import(
-          "@kurrent/kurrentdb-client"
+        const { TrogonEventStoreClient, jsonEvent } = await import(
+          "@trogonstack/trogon-eventstore-client"
         );
 
         const STREAM = v4();
 
-        const client = KurrentDBClient.connectionString(
+        const client = TrogonEventStoreClient.connectionString(
           node.connectionString()
         );
 
@@ -108,17 +107,21 @@ describe("instrumentation", () => {
         });
 
         const expectedAttributes = {
-          [KurrentAttributes.KURRENT_DB_STREAM]: STREAM,
-          [KurrentAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
-          [KurrentAttributes.SERVER_PORT]: node.endpoints[0].port.toString(),
-          [KurrentAttributes.DATABASE_SYSTEM]: moduleName,
-          [KurrentAttributes.DATABASE_OPERATION]: "appendToStream",
+          [TrogonEventStoreAttributes.TROGON_EVENT_STORE_STREAM]: STREAM,
+          [TrogonEventStoreAttributes.SERVER_ADDRESS]:
+            node.endpoints[0].address,
+          [TrogonEventStoreAttributes.SERVER_PORT]:
+            node.endpoints[0].port.toString(),
+          [TrogonEventStoreAttributes.DATABASE_SYSTEM]: moduleName,
+          [TrogonEventStoreAttributes.DATABASE_OPERATION]: "appendToStream",
         };
 
-        if (withCredentials && isBasicCredentials(credentials)) {
-          expectedAttributes[KurrentAttributes.DATABASE_USER] =
-            credentials.username;
-          expectedAttributes[KurrentAttributes.KURRENT_DB_AUTH_KIND] = "basic";
+        if (withCredentials) {
+          expectedAttributes[TrogonEventStoreAttributes.DATABASE_USER] =
+            credentials!.username;
+          expectedAttributes[
+            TrogonEventStoreAttributes.TROGON_EVENT_STORE_AUTH_KIND
+          ] = "basic";
         }
 
         expect(spans.length).toBe(1);
@@ -127,9 +130,13 @@ describe("instrumentation", () => {
     );
 
     test("span contains error when append fails", async () => {
-      const { KurrentDBClient } = await import("@kurrent/kurrentdb-client");
+      const { TrogonEventStoreClient } = await import(
+        "@trogonstack/trogon-eventstore-client"
+      );
 
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       const STREAM_NAME = v4();
 
@@ -176,13 +183,15 @@ describe("instrumentation", () => {
   describe("catch up subscriptions", () => {
     test("should create child span in subscription to stream", async () => {
       const defer = new Defer();
-      const { KurrentDBClient, jsonEvent } = await import(
-        "@kurrent/kurrentdb-client"
+      const { TrogonEventStoreClient, jsonEvent } = await import(
+        "@trogonstack/trogon-eventstore-client"
       );
 
       const STREAM = v4();
 
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       const handleError = jest.fn((error) => {
         defer.reject(error);
@@ -220,10 +229,10 @@ describe("instrumentation", () => {
       const spans = memoryExporter.getFinishedSpans();
 
       const parentSpan = spans.find(
-        (span) => span.name === KurrentAttributes.STREAM_APPEND
+        (span) => span.name === TrogonEventStoreAttributes.STREAM_APPEND
       );
       const childSpan = spans.find(
-        (span) => span.name === KurrentAttributes.STREAM_SUBSCRIBE
+        (span) => span.name === TrogonEventStoreAttributes.STREAM_SUBSCRIBE
       );
 
       expect(handleConfirmation).toHaveBeenCalledTimes(1);
@@ -233,35 +242,40 @@ describe("instrumentation", () => {
       expect(parentSpan?.spanContext().spanId).toBe(childSpan?.parentSpanId);
 
       expect(childSpan?.attributes).toMatchObject({
-        [KurrentAttributes.KURRENT_DB_STREAM]: STREAM,
-        [KurrentAttributes.KURRENT_DB_EVENT_ID]: event.id,
-        [KurrentAttributes.KURRENT_DB_EVENT_TYPE]: event.type,
-        [KurrentAttributes.KURRENT_DB_SUBSCRIPTION_ID]: subscription.id,
-        [KurrentAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
-        [KurrentAttributes.SERVER_PORT]: node.endpoints[0].port.toString(),
-        [KurrentAttributes.DATABASE_SYSTEM]: moduleName,
-        [KurrentAttributes.DATABASE_OPERATION]: "subscribeToStream",
-        [KurrentAttributes.DATABASE_USER]: "admin",
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_STREAM]: STREAM,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_ID]: event.id,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_TYPE]: event.type,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_SUBSCRIPTION_ID]:
+          subscription.id,
+        [TrogonEventStoreAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
+        [TrogonEventStoreAttributes.SERVER_PORT]:
+          node.endpoints[0].port.toString(),
+        [TrogonEventStoreAttributes.DATABASE_SYSTEM]: moduleName,
+        [TrogonEventStoreAttributes.DATABASE_OPERATION]: "subscribeToStream",
+        [TrogonEventStoreAttributes.DATABASE_USER]: "admin",
       });
 
       expect(parentSpan?.attributes).toMatchObject({
-        [KurrentAttributes.KURRENT_DB_STREAM]: STREAM,
-        [KurrentAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
-        [KurrentAttributes.SERVER_PORT]: node.endpoints[0].port.toString(),
-        [KurrentAttributes.DATABASE_SYSTEM]: moduleName,
-        [KurrentAttributes.DATABASE_OPERATION]: "appendToStream",
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_STREAM]: STREAM,
+        [TrogonEventStoreAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
+        [TrogonEventStoreAttributes.SERVER_PORT]:
+          node.endpoints[0].port.toString(),
+        [TrogonEventStoreAttributes.DATABASE_SYSTEM]: moduleName,
+        [TrogonEventStoreAttributes.DATABASE_OPERATION]: "appendToStream",
       });
     });
 
     test("events with non-json metadata are not traced in subscriptions", async () => {
       const defer = new Defer();
-      const { KurrentDBClient, jsonEvent, binaryEvent } = await import(
-        "@kurrent/kurrentdb-client"
+      const { TrogonEventStoreClient, jsonEvent, binaryEvent } = await import(
+        "@trogonstack/trogon-eventstore-client"
       );
 
       const STREAM = v4();
 
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       const handleError = jest.fn((error) => {
         defer.reject(error);
@@ -309,11 +323,11 @@ describe("instrumentation", () => {
       const spans = memoryExporter.getFinishedSpans();
 
       const parentSpans = spans.filter(
-        (span) => span.name === KurrentAttributes.STREAM_APPEND
+        (span) => span.name === TrogonEventStoreAttributes.STREAM_APPEND
       );
 
       const childSpans = spans.filter(
-        (span) => span.name === KurrentAttributes.STREAM_SUBSCRIBE
+        (span) => span.name === TrogonEventStoreAttributes.STREAM_SUBSCRIBE
       );
 
       expect(handleConfirmation).toHaveBeenCalledTimes(1);
@@ -325,10 +339,14 @@ describe("instrumentation", () => {
       expect(childSpans).toHaveLength(1);
 
       expect(
-        childSpans[0].attributes[KurrentAttributes.KURRENT_DB_EVENT_ID]
+        childSpans[0].attributes[
+          TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_ID
+        ]
       ).toBe(event1.id);
       expect(
-        childSpans[0].attributes[KurrentAttributes.KURRENT_DB_EVENT_TYPE]
+        childSpans[0].attributes[
+          TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_TYPE
+        ]
       ).toBe(event1.type);
     });
   });
@@ -336,16 +354,18 @@ describe("instrumentation", () => {
   describe("persistent subscriptions", () => {
     test("should create child span in persistent subscription to stream", async () => {
       const {
-        KurrentDBClient,
+        TrogonEventStoreClient,
         jsonEvent,
         persistentSubscriptionToStreamSettingsFromDefaults,
         START,
-      } = await import("@kurrent/kurrentdb-client");
+      } = await import("@trogonstack/trogon-eventstore-client");
 
       const STREAM = v4();
       const GROUP = v4();
 
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       await client.createPersistentSubscriptionToStream(
         STREAM,
@@ -391,10 +411,10 @@ describe("instrumentation", () => {
       expect(handleEvent).toHaveBeenCalledTimes(1);
 
       const parentSpan = spans.find(
-        (span) => span.name === KurrentAttributes.STREAM_APPEND
+        (span) => span.name === TrogonEventStoreAttributes.STREAM_APPEND
       );
       const childSpan = spans.find(
-        (span) => span.name === KurrentAttributes.STREAM_SUBSCRIBE
+        (span) => span.name === TrogonEventStoreAttributes.STREAM_SUBSCRIBE
       );
 
       expect(parentSpan).toBeDefined();
@@ -402,38 +422,43 @@ describe("instrumentation", () => {
       expect(parentSpan?.spanContext().spanId).toBe(childSpan?.parentSpanId);
 
       expect(childSpan?.attributes).toMatchObject({
-        [KurrentAttributes.KURRENT_DB_STREAM]: STREAM,
-        [KurrentAttributes.KURRENT_DB_EVENT_ID]: event.id,
-        [KurrentAttributes.KURRENT_DB_EVENT_TYPE]: event.type,
-        [KurrentAttributes.KURRENT_DB_SUBSCRIPTION_ID]: subscription.id,
-        [KurrentAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
-        [KurrentAttributes.SERVER_PORT]: node.endpoints[0].port.toString(),
-        [KurrentAttributes.DATABASE_SYSTEM]: moduleName,
-        [KurrentAttributes.DATABASE_OPERATION]:
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_STREAM]: STREAM,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_ID]: event.id,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_TYPE]: event.type,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_SUBSCRIPTION_ID]:
+          subscription.id,
+        [TrogonEventStoreAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
+        [TrogonEventStoreAttributes.SERVER_PORT]:
+          node.endpoints[0].port.toString(),
+        [TrogonEventStoreAttributes.DATABASE_SYSTEM]: moduleName,
+        [TrogonEventStoreAttributes.DATABASE_OPERATION]:
           "subscribeToPersistentSubscriptionToStream",
       });
 
       expect(parentSpan?.attributes).toMatchObject({
-        [KurrentAttributes.KURRENT_DB_STREAM]: STREAM,
-        [KurrentAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
-        [KurrentAttributes.SERVER_PORT]: node.endpoints[0].port.toString(),
-        [KurrentAttributes.DATABASE_SYSTEM]: moduleName,
-        [KurrentAttributes.DATABASE_OPERATION]: "appendToStream",
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_STREAM]: STREAM,
+        [TrogonEventStoreAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
+        [TrogonEventStoreAttributes.SERVER_PORT]:
+          node.endpoints[0].port.toString(),
+        [TrogonEventStoreAttributes.DATABASE_SYSTEM]: moduleName,
+        [TrogonEventStoreAttributes.DATABASE_OPERATION]: "appendToStream",
       });
     });
 
     test("should create child span in persistent subscription to all", async () => {
       const {
-        KurrentDBClient,
+        TrogonEventStoreClient,
         jsonEvent,
         persistentSubscriptionToAllSettingsFromDefaults,
         START,
-      } = await import("@kurrent/kurrentdb-client");
+      } = await import("@trogonstack/trogon-eventstore-client");
 
       const GROUP = v4();
       const STREAM = v4();
 
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       await client.createPersistentSubscriptionToAll(
         GROUP,
@@ -489,10 +514,10 @@ describe("instrumentation", () => {
       const spans = memoryExporter.getFinishedSpans();
 
       const parentSpan = spans.find(
-        (span) => span.name === KurrentAttributes.STREAM_APPEND
+        (span) => span.name === TrogonEventStoreAttributes.STREAM_APPEND
       );
       const childSpan = spans.find(
-        (span) => span.name === KurrentAttributes.STREAM_SUBSCRIBE
+        (span) => span.name === TrogonEventStoreAttributes.STREAM_SUBSCRIBE
       );
 
       expect(parentSpan).toBeDefined();
@@ -500,24 +525,27 @@ describe("instrumentation", () => {
       expect(parentSpan?.spanContext().spanId).toBe(childSpan?.parentSpanId);
 
       expect(childSpan?.attributes).toMatchObject({
-        [KurrentAttributes.KURRENT_DB_STREAM]: STREAM,
-        [KurrentAttributes.KURRENT_DB_EVENT_ID]: event.id,
-        [KurrentAttributes.KURRENT_DB_EVENT_TYPE]: event.type,
-        [KurrentAttributes.KURRENT_DB_SUBSCRIPTION_ID]: subscription.id,
-        [KurrentAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
-        [KurrentAttributes.SERVER_PORT]: node.endpoints[0].port.toString(),
-        [KurrentAttributes.DATABASE_SYSTEM]: moduleName,
-        [KurrentAttributes.DATABASE_OPERATION]:
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_STREAM]: STREAM,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_ID]: event.id,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_TYPE]: event.type,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_SUBSCRIPTION_ID]:
+          subscription.id,
+        [TrogonEventStoreAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
+        [TrogonEventStoreAttributes.SERVER_PORT]:
+          node.endpoints[0].port.toString(),
+        [TrogonEventStoreAttributes.DATABASE_SYSTEM]: moduleName,
+        [TrogonEventStoreAttributes.DATABASE_OPERATION]:
           "subscribeToPersistentSubscriptionToAll",
-        [KurrentAttributes.DATABASE_USER]: "admin",
+        [TrogonEventStoreAttributes.DATABASE_USER]: "admin",
       });
 
       expect(parentSpan?.attributes).toMatchObject({
-        [KurrentAttributes.KURRENT_DB_STREAM]: STREAM,
-        [KurrentAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
-        [KurrentAttributes.SERVER_PORT]: node.endpoints[0].port.toString(),
-        [KurrentAttributes.DATABASE_SYSTEM]: moduleName,
-        [KurrentAttributes.DATABASE_OPERATION]: "appendToStream",
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_STREAM]: STREAM,
+        [TrogonEventStoreAttributes.SERVER_ADDRESS]: node.endpoints[0].address,
+        [TrogonEventStoreAttributes.SERVER_PORT]:
+          node.endpoints[0].port.toString(),
+        [TrogonEventStoreAttributes.DATABASE_SYSTEM]: moduleName,
+        [TrogonEventStoreAttributes.DATABASE_OPERATION]: "appendToStream",
       });
     });
   });

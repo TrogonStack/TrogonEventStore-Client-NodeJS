@@ -2,7 +2,7 @@
   "name": "test",
   "version": "0.0.1",
   "private": true,
-  "description": "KurrentDB Client Tests",
+  "description": "TrogonEventStore client tests",
   "scripts": {
     "build": "yarn build:ts",
     "build:ts": "tsc --build",
@@ -16,21 +16,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kurrent-io/KurrentDB-Client-NodeJS.git"
+    "url": "git+https://github.com/TrogonStack/TrogonEventStore-Client-NodeJS.git"
   },
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/kurrent-io/KurrentDB-Client-NodeJS/issues"
+    "url": "https://github.com/TrogonStack/TrogonEventStore-Client-NodeJS/issues"
   },
-  "homepage": "https://developers.kurrent.io/clients/grpc/getting-started?codeLanguage=NodeJS",
+  "homepage": "https://github.com/TrogonStack/TrogonEventStore-Client-NodeJS",
   "keywords": [
-    "Kurrent",
+    "TrogonEventStore",
     "EventSourcing",
     "Test"
   ],
   "dependencies": {
-    "@kurrent/kurrentdb-client": "workspace:^",
-    "@kurrent/opentelemetry": "workspace:^"
+    "@trogonstack/trogon-eventstore-client": "workspace:^",
+    "@trogonstack/trogon-eventstore-opentelemetry": "workspace:^"
   },
   "devDependencies": {
     "@grpc/grpc-js": "^1.14.3",

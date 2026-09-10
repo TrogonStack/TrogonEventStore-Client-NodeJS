@@ -1,25 +1,25 @@
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   START,
   FORWARDS,
   JSONEventType,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 import { optionalDescribe } from "@test-utils";
 import { randomUUID as uuid } from "crypto";
 
-const CLOUD_ID = process.env.EVENTSTORE_CLOUD_ID!;
+const DNS_ENDPOINT = process.env.TROGON_EVENTSTORE_DNS_ENDPOINT!;
 const STREAM_NAME = uuid();
 
 /*
 // region createClient
-const client = KurrentDBClient.connectionString`{connectionString}`;
+const client = TrogonEventStoreClient.connectionString`{connectionString}`;
 // endregion createClient
 */
 
-optionalDescribe(!!CLOUD_ID)("[sample] get-started", () => {
+optionalDescribe(!!DNS_ENDPOINT)("[sample] get-started", () => {
   test("get-started", async () => {
-    const client = KurrentDBClient.connectionString`esdb+discover://${CLOUD_ID}.mesdb.eventstore.cloud`;
+    const client = TrogonEventStoreClient.connectionString`esdb+discover://${DNS_ENDPOINT}`;
 
     // region createEvent
     type TestEvent = JSONEventType<

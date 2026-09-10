@@ -1,6 +1,6 @@
-import { AppendReq } from "../../../generated/kurrentdb/protocols/v1/streams_pb";
-import { Empty } from "../../../generated/kurrentdb/protocols/v1/shared_pb";
-import { StreamsClient } from "../../../generated/kurrentdb/protocols/v1/streams_grpc_pb";
+import { AppendReq } from "../../../generated/event_store/protocols/v1/streams_pb";
+import { Empty } from "../../../generated/event_store/protocols/v1/shared_pb";
+import { StreamsClient } from "../../../generated/event_store/protocols/v1/streams_grpc_pb";
 
 import type { Client } from "../../Client";
 import type { AppendResult, AppendStreamState, EventData } from "../../types";

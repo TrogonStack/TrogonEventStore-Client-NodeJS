@@ -1,19 +1,19 @@
 import { collect, createTestNode, jsonTestEvents } from "@test-utils";
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   WrongExpectedVersionError,
   NO_STREAM,
   StreamNotFoundError,
   BACKWARDS,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("deleteStream", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {
@@ -114,10 +114,8 @@ describe("deleteStream", () => {
               expectedRevision: NO_STREAM,
             });
 
-            // Before https://github.com/kurrent-io/EventStore/pull/3154 this should pass.
             expect(result).toBeDefined();
           } catch (error) {
-            // After https://github.com/kurrent-io/EventStore/pull/3154 this will throw an error.
             expect(error).toBeInstanceOf(WrongExpectedVersionError);
 
             if (error instanceof WrongExpectedVersionError) {

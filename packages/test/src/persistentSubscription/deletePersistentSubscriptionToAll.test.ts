@@ -7,20 +7,20 @@ import {
 } from "@test-utils";
 
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   persistentSubscriptionToAllSettingsFromDefaults,
   UnsupportedError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("deletePersistentSubscriptionToAll", () => {
   const supported = matchServerVersion`>=21.10`;
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
 
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

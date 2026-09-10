@@ -12,22 +12,22 @@ import {
   optionalDescribe,
 } from "@test-utils";
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   persistentSubscriptionToAllSettingsFromDefaults,
   persistentSubscriptionToStreamSettingsFromDefaults,
   START,
   streamNameFilter,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("dispose", () => {
   const supported = matchServerVersion`>=21.10`;
 
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {
@@ -387,7 +387,7 @@ describe("dispose", () => {
   });
 });
 
-function extractKnownStreams(this: KurrentDBClient): Set<Stream> {
+function extractKnownStreams(this: TrogonEventStoreClient): Set<Stream> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (this as any).disposableStreams;
 }

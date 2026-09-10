@@ -34,7 +34,7 @@ stream, which includes all events.
 ### Subscribing to a Specific Stream
 
 ```ts
-import { persistentSubscriptionToStreamSettingsFromDefaults } from "@kurrent/kurrentdb-client";
+import { persistentSubscriptionToStreamSettingsFromDefaults } from "@trogonstack/trogon-eventstore-client";
 
 await client.createPersistentSubscriptionToStream(
   "stream-name",
@@ -46,7 +46,7 @@ await client.createPersistentSubscriptionToStream(
 ### Subscribing to `$all`
 
 ```ts
-import { persistentSubscriptionToAllSettingsFromDefaults, streamNameFilter } from "@kurrent/kurrentdb-client";
+import { persistentSubscriptionToAllSettingsFromDefaults, streamNameFilter } from "@trogonstack/trogon-eventstore-client";
 
 await client.createPersistentSubscriptionToAll(
   "group-name",
@@ -58,7 +58,7 @@ await client.createPersistentSubscriptionToAll(
 ```
 
 ::: note
-As from EventStoreDB 21.10, the ability to subscribe to `$all` supports
+Subscriptions to `$all` support
 [server-side filtering](subscriptions.md#server-side-filtering). You can create
 a subscription group for `$all` similarly to how you would for a specific
 stream:
@@ -82,7 +82,7 @@ speed of your processing.
 The code below shows how to connect to an existing subscription group for a specific stream:
 
 ```ts
-import { PARK } from "@kurrent/kurrentdb-client";
+import { PARK } from "@trogonstack/trogon-eventstore-client";
 
 const subscription = client.subscribeToPersistentSubscriptionToStream("stream-name", "group-name");
 
@@ -135,7 +135,7 @@ reason, then you can Nack (not acknowledge) the message and tell the server how
 to handle the failure.
 
 ```ts
-import { PARK } from "@kurrent/kurrentdb-client";
+import { PARK } from "@trogonstack/trogon-eventstore-client";
 
 const subscription = client.subscribeToPersistentSubscriptionToStream("stream-name", "group-name");
 
@@ -194,7 +194,7 @@ resources.
 
 For use with an indexing projection such as the system `$by_category` projection.
 
-KurrentDB inspects the event for its source stream id, hashing the id to one
+TrogonEventStore inspects the event for its source stream id, hashing the id to one
 of 1024 buckets assigned to individual clients. When a client disconnects, its
 buckets are assigned to other clients. When a client connects, it is assigned
 some existing buckets. This naively attempts to maintain a balanced workload.
@@ -233,7 +233,7 @@ having them reconnect. You must have admin permissions to update a persistent
 subscription group.
 
 ```ts
-import { persistentSubscriptionToStreamSettingsFromDefaults } from "@kurrent/kurrentdb-client";
+import { persistentSubscriptionToStreamSettingsFromDefaults } from "@trogonstack/trogon-eventstore-client";
 
 await client.updatePersistentSubscriptionToStream(
   "stream-name",

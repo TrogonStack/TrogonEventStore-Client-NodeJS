@@ -3,7 +3,7 @@ import {
   isSystemStream,
   metastreamOf,
   originalStreamOf,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("systemStreams helpers", () => {
   describe("isSystemStream", () => {

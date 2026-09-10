@@ -1,5 +1,5 @@
 import { createTestCluster, jsonTestEvents } from "@test-utils";
-import { KurrentDBClient } from "@kurrent/kurrentdb-client";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client";
 
 describe("Channel", () => {
   const cluster = createTestCluster();
@@ -13,7 +13,7 @@ describe("Channel", () => {
   });
 
   test("a single client should connect to a single node", async () => {
-    const client = KurrentDBClient.connectionString(
+    const client = TrogonEventStoreClient.connectionString(
       cluster.connectionStringWithOverrides({
         nodePreference: "random",
       })

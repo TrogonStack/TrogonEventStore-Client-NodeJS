@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { UUID } from "../../generated/kurrentdb/protocols/v1/shared_pb";
+import { UUID } from "../../generated/event_store/protocols/v1/shared_pb";
 
 export const createUUID = (id: string = randomUUID()): UUID => {
   const uuid = new UUID();

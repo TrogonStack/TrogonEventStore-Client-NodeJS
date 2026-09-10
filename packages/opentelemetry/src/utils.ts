@@ -5,7 +5,7 @@ import {
   type Credentials,
   type EventData,
   type JSONEventData,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 export function hasConvertGrpcEventMethod(
   obj: any

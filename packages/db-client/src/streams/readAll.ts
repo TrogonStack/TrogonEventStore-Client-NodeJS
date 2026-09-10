@@ -1,15 +1,28 @@
+import type { ReadableOptions } from "stream";
+
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
+import { StreamsClient } from "../../generated/event_store/protocols/v1/streams_grpc_pb";
+import { ReadReq } from "../../generated/event_store/protocols/v1/streams_pb";
+
 import type {
   BaseOptions,
   ReadPosition,
   Direction,
   AllStreamResolvedEvent,
+  StreamingRead,
   Filter,
 } from "../types";
-import { FORWARDS, START } from "../constants";
+import { debug, convertGrpcEvent } from "../utils";
+import {
+  BACKWARDS,
+  EVENT_TYPE,
+  FORWARDS,
+  START,
+  STREAM_NAME,
+} from "../constants";
 import { Client } from "../Client";
 
-import { convertRustEvent } from "../utils/convertRustEvent";
-import { convertBridgeError } from "../utils/convertBridgeError";
+import { ReadStream } from "./utils/ReadStream";
 
 export interface ReadAllOptions extends BaseOptions {
   /**
@@ -48,8 +61,9 @@ declare module "../Client" {
      * @param options - Reading options.
      */
     readAll(
-      options?: ReadAllOptions
-    ): AsyncIterableIterator<AllStreamResolvedEvent>;
+      options?: ReadAllOptions,
+      readableOptions?: ReadableOptions
+    ): StreamingRead<AllStreamResolvedEvent>;
   }
 }
 
@@ -60,41 +74,106 @@ Client.prototype.readAll = function (
     fromPosition = START,
     resolveLinkTos = false,
     direction = FORWARDS,
+    filter,
     ...baseOptions
-  }: ReadAllOptions = {}
-): AsyncIterableIterator<AllStreamResolvedEvent> {
-  const convert = async function* (
-    this: Client
-  ): AsyncIterableIterator<AllStreamResolvedEvent> {
-    const credentials = await this.resolveBridgeCredentials(
-      baseOptions.credentials
-    );
+  }: ReadAllOptions = {},
+  readableOptions: ReadableOptions = {}
+): StreamingRead<AllStreamResolvedEvent> {
+  const req = new ReadReq();
+  const options = new ReadReq.Options();
 
-    let stream;
-    try {
-      stream = this.rustClient.readAll({
-        credentials,
-        direction,
-        fromPosition,
-        filter: baseOptions.filter,
-        maxCount: BigInt(maxCount),
-        requiresLeader: baseOptions.requiresLeader ?? false,
-        resolvesLink: resolveLinkTos,
-      });
-    } catch (error) {
-      throw convertBridgeError(error);
+  const uuidOption = new ReadReq.Options.UUIDOption();
+  uuidOption.setString(new Empty());
+
+  const allOptions = new ReadReq.Options.AllOptions();
+
+  switch (fromPosition) {
+    case "start": {
+      allOptions.setStart(new Empty());
+      break;
     }
 
-    try {
-      for await (const events of stream) {
-        for (const event of events) {
-          yield convertRustEvent<AllStreamResolvedEvent>(event);
-        }
+    case "end": {
+      allOptions.setEnd(new Empty());
+      break;
+    }
+
+    default: {
+      const pos = new ReadReq.Options.Position();
+      pos.setCommitPosition(fromPosition.commit.toString(10));
+      pos.setPreparePosition(fromPosition.prepare.toString(10));
+      allOptions.setPosition(pos);
+      break;
+    }
+  }
+
+  options.setAll(allOptions);
+  options.setResolveLinks(resolveLinkTos);
+  options.setCount(maxCount.toString(10));
+  options.setUuidOption(uuidOption);
+  if (filter) {
+    const expression = new ReadReq.Options.FilterOptions.Expression();
+
+    if ("prefixes" in filter) expression.setPrefixList(filter.prefixes);
+    if ("regex" in filter) expression.setRegex(filter.regex);
+
+    const filterOptions = new ReadReq.Options.FilterOptions();
+    if (filter.filterOn === STREAM_NAME) {
+      filterOptions.setStreamIdentifier(expression);
+    } else if (filter.filterOn === EVENT_TYPE) {
+      filterOptions.setEventType(expression);
+    }
+
+    if (typeof filter.maxSearchWindow === "number") {
+      if (filter.maxSearchWindow <= 0) {
+        throw new Error("MaxSearchWindow must be greater than 0.");
       }
-    } catch (error) {
-      throw convertBridgeError(error);
+      filterOptions.setMax(filter.maxSearchWindow);
+    } else {
+      filterOptions.setCount(new Empty());
     }
-  };
 
-  return convert.call(this);
+    filterOptions.setCheckpointintervalmultiplier(filter.checkpointInterval);
+    options.setFilter(filterOptions);
+  } else {
+    options.setNoFilter(new Empty());
+  }
+
+  switch (direction) {
+    case FORWARDS: {
+      options.setReadDirection(0);
+      break;
+    }
+    case BACKWARDS: {
+      options.setReadDirection(1);
+      break;
+    }
+  }
+
+  req.setOptions(options);
+
+  debug.command("readAll: %O", {
+    maxCount,
+    options: {
+      fromPosition,
+      direction,
+      filter,
+      ...baseOptions,
+    },
+  });
+  debug.command_grpc("readAll: %g", req);
+
+  const createGRPCStream = this.GRPCStreamCreator(
+    StreamsClient,
+    "readAll",
+    (client) =>
+      client.read(
+        req,
+        ...this.callArguments(baseOptions, {
+          deadline: Infinity,
+        })
+      )
+  );
+
+  return new ReadStream(createGRPCStream, convertGrpcEvent, readableOptions);
 };

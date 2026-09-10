@@ -1,22 +1,14 @@
-import { Empty } from "../../generated/kurrentdb/protocols/v1/shared_pb";
-import { CreateReq } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_pb";
-import semver from "semver";
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
+import { CreateReq } from "../../generated/event_store/protocols/v1/persistentsubscriptions_pb";
 import {
   PersistentSubscriptionsClient,
   PersistentSubscriptionsService,
-} from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_grpc_pb";
+} from "../../generated/event_store/protocols/v1/persistentsubscriptions_grpc_pb";
 
 import type { BaseOptions, Filter } from "../types";
 import { debug, convertToCommandError, UnsupportedError } from "../utils";
 import { Client } from "../Client";
-import {
-  END,
-  EVENT_TYPE,
-  PINNED_BY_CORRELATION,
-  ROUND_ROBIN,
-  START,
-  STREAM_NAME,
-} from "../constants";
+import { END, EVENT_TYPE, START, STREAM_NAME } from "../constants";
 
 import { settingsToGRPC } from "./utils/settingsToGRPC";
 import type { PersistentSubscriptionToAllSettings } from "./utils/persistentSubscriptionSettings";
@@ -54,20 +46,10 @@ Client.prototype.createPersistentSubscriptionToAll = async function (
   settings: PersistentSubscriptionToAllSettings,
   { filter, ...baseOptions }: CreatePersistentSubscriptionToAllOptions = {}
 ): Promise<void> {
-  const { serverVersion, supports } = await this.capabilities;
+  const { supports } = await this.capabilities;
 
   if (!supports(PersistentSubscriptionsService.create, "all")) {
     throw new UnsupportedError("createPersistentSubscriptionToAll", "21.10");
-  }
-
-  if (
-    semver.lt(serverVersion, "21.10.1") &&
-    settings.consumerStrategyName === PINNED_BY_CORRELATION
-  ) {
-    console.warn(
-      `Consumer strategy "${PINNED_BY_CORRELATION}" requires server version ${serverVersion} or higher. "${ROUND_ROBIN}" will be used instead.`
-    );
-    settings.consumerStrategyName = ROUND_ROBIN;
   }
 
   const req = new CreateReq();

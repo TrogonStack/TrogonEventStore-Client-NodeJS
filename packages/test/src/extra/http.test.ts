@@ -1,23 +1,25 @@
 import {
   ConnectionFeatures,
-  createInsecureTestCluster,
-  createTestCluster,
+  createInsecureTestNode,
+  createTestNode,
 } from "@test-utils";
-import { KurrentDBClient } from "@kurrent/kurrentdb-client";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client";
 
 describe("http api", () => {
-  interface PingResult {
-    text: string;
+  interface QueueDashboard {
+    queues: unknown[];
   }
-  function ping(this: KurrentDBClient) {
-    return this.HTTPRequest<PingResult>("GET", "/ping", {});
+  function queueDashboard(this: TrogonEventStoreClient) {
+    return this.HTTPRequest<QueueDashboard>(
+      "GET",
+      "/ui/queue-dashboard/payload",
+      {}
+    );
   }
-  const goodPing = {
-    text: "Ping request successfully handled",
-  };
+  const validDashboard = { queues: expect.any(Array) };
 
   describe("secure", () => {
-    const cluster = createTestCluster();
+    const cluster = createTestNode();
 
     beforeAll(async () => {
       await cluster.up();
@@ -28,12 +30,12 @@ describe("http api", () => {
     });
 
     test("dns", async () => {
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionString()
       );
 
-      const result = await ping.call(client);
-      expect(result).toMatchObject(goodPing);
+      const result = await queueDashboard.call(client);
+      expect(result).toMatchObject(validDashboard);
     });
 
     test("ip", async () => {
@@ -43,16 +45,16 @@ describe("http api", () => {
           port,
         })),
       };
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides(overrides)
       );
 
-      const result = await ping.call(client);
-      expect(result).toMatchObject(goodPing);
+      const result = await queueDashboard.call(client);
+      expect(result).toMatchObject(validDashboard);
     });
 
     test("error transform", async () => {
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionString()
       );
 
@@ -64,8 +66,8 @@ describe("http api", () => {
         }
       }
 
-      function nonsense(this: KurrentDBClient) {
-        return this.HTTPRequest<PingResult>("POST", "/asdpoijsad", {
+      function nonsense(this: TrogonEventStoreClient) {
+        return this.HTTPRequest<string>("POST", "/asdpoijsad", {
           transformError: (statusCode, statusMessage) => {
             if (statusCode === 404) {
               return new TestError(statusCode, statusMessage);
@@ -85,7 +87,7 @@ describe("http api", () => {
   });
 
   describe("insecure", () => {
-    const cluster = createInsecureTestCluster();
+    const cluster = createInsecureTestNode();
 
     beforeAll(async () => {
       await cluster.up();
@@ -96,11 +98,11 @@ describe("http api", () => {
     });
 
     test("dns", async () => {
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionString()
       );
-      const result = await ping.call(client);
-      expect(result).toMatchObject(goodPing);
+      const result = await queueDashboard.call(client);
+      expect(result).toMatchObject(validDashboard);
     });
 
     test("ip", async () => {
@@ -110,16 +112,16 @@ describe("http api", () => {
           port,
         })),
       };
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides(overrides)
       );
 
-      const result = await ping.call(client);
-      expect(result).toMatchObject(goodPing);
+      const result = await queueDashboard.call(client);
+      expect(result).toMatchObject(validDashboard);
     });
 
     test("error transform", async () => {
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionString()
       );
 
@@ -131,8 +133,8 @@ describe("http api", () => {
         }
       }
 
-      function nonsense(this: KurrentDBClient) {
-        return this.HTTPRequest<PingResult>("POST", "/asdpoijsad", {
+      function nonsense(this: TrogonEventStoreClient) {
+        return this.HTTPRequest<string>("POST", "/asdpoijsad", {
           transformError: (statusCode, statusMessage) => {
             if (statusCode === 404) {
               return new TestError(statusCode, statusMessage);

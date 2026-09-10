@@ -6,7 +6,7 @@ import {
 } from "@test-utils";
 
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   WrongExpectedVersionError,
   ANY,
@@ -15,15 +15,15 @@ import {
   binaryEvent,
   BinaryEventType,
   JSONEventType,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("appendToStream", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {
@@ -44,7 +44,9 @@ describe("appendToStream", () => {
       const STREAM_NAME = "encode1";
       const KILLER = "CC ‐ 1830";
 
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       await client.appendToStream(
         STREAM_NAME,
@@ -550,7 +552,7 @@ describe("appendToStream", () => {
 
   describe("throwOnAppendFailure", () => {
     test("throws on true", async () => {
-      const throwingClient = KurrentDBClient.connectionString(
+      const throwingClient = TrogonEventStoreClient.connectionString(
         node.connectionStringWithOverrides({
           throwOnAppendFailure: true,
         })
@@ -582,7 +584,7 @@ describe("appendToStream", () => {
     });
 
     test("returns failure result on false", async () => {
-      const nonThrowingClient = KurrentDBClient.connectionString(
+      const nonThrowingClient = TrogonEventStoreClient.connectionString(
         node.connectionStringWithOverrides({
           throwOnAppendFailure: false,
         })

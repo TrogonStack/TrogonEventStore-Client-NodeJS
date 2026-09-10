@@ -4,10 +4,19 @@ import { promisify } from "util";
 import * as cp from "child_process";
 
 import { randomUUID as uuid } from "crypto";
+import { credentials as grpcCredentials } from "@grpc/grpc-js";
 import getPort from "get-port";
 import { upAll, down, exec, stopOne, logs } from "docker-compose/dist/v2";
 
-import type { EndPoint, Certificate } from "@kurrent/kurrentdb-client";
+import type {
+  EndPoint,
+  Certificate,
+} from "@trogonstack/trogon-eventstore-client";
+import {
+  TrogonEventStoreClient,
+  VNodeState,
+} from "@trogonstack/trogon-eventstore-client";
+import { listClusterMembers } from "@trogonstack/trogon-eventstore-client/dist/Client/discovery";
 
 import { testDebug } from "./debug";
 import { dockerImages } from "./dockerImages";
@@ -74,8 +83,8 @@ const createNodes = (
   internalIPs.reduce(
     (acc, { port, ipv4_address }, i, ipAddresses) => ({
       ...acc,
-      [`kdb-node-${i}`]: {
-        image: dockerImages.kdb,
+      [`trogon-eventstore-node-${i}`]: {
+        image: dockerImages.server,
         environment: [
           `EVENTSTORE_GOSSIP_SEED=${ipAddresses
             .reduce<string[]>(
@@ -90,6 +99,7 @@ const createNodes = (
           `EVENTSTORE_CLUSTER_SIZE=${internalIPs.length}`,
           "EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true",
           "EVENTSTORE_RUN_PROJECTIONS=All",
+          "EVENTSTORE_COMPRESSION_LEVEL=NoCompression",
           "EVENTSTORE_LOG_CONFIG=/etc/eventstore/config/logconfig.json",
           "EVENTSTORE_DISCOVER_VIA_DNS=false",
           "EVENTSTORE_ALLOW_UNKNOWN_OPTIONS=true",
@@ -279,7 +289,7 @@ export class Cluster {
       paramsString = `?${params.join("&")}`;
     }
 
-    return `kurrentdb://${credentials}@${endpoints}${paramsString}`;
+    return `esdb://${credentials}@${endpoints}${paramsString}`;
   };
 
   public up = async (): Promise<void> => {
@@ -314,6 +324,9 @@ export class Cluster {
     if (this.count > 1) {
       await this.leaderElected();
     }
+
+    await this.acceptingAuthenticatedRequests();
+    await this.acceptingClientReads();
 
     if (!this.insecure) {
       this.certificates = {
@@ -441,7 +454,7 @@ export class Cluster {
       },
       networks: {
         clusternetwork: {
-          name: `${this.id}.kurrentdb.local`,
+          name: `${this.id}.trogonEventStore.local`,
           driver: "bridge",
           ipam: {
             driver: "default",
@@ -470,7 +483,10 @@ export class Cluster {
 
   private healthy = async (...nodes: string[]) => {
     nodes = !nodes.length
-      ? Array.from({ length: this.count }, (_, i) => `kdb-node-${i}`)
+      ? Array.from(
+          { length: this.count },
+          (_, i) => `trogon-eventstore-node-${i}`
+        )
       : nodes;
 
     const healthy = new Set();
@@ -484,7 +500,7 @@ export class Cluster {
             node,
             `curl --fail --insecure http${
               this.insecure ? "" : "s"
-            }://localhost:2113/health/live`,
+            }://localhost:2113/-/liveness`,
             { cwd: this.path() }
           );
 
@@ -502,10 +518,57 @@ export class Cluster {
 
   private leaderElected = async (...nodes: string[]) => {
     nodes = !nodes.length
-      ? Array.from({ length: this.count }, (_, i) => `kdb-node-${i}`)
+      ? Array.from(
+          { length: this.count },
+          (_, i) => `trogon-eventstore-node-${i}`
+        )
       : nodes;
 
     const ready = new Set();
+    const credentials = this.insecure
+      ? grpcCredentials.createInsecure()
+      : grpcCredentials.createSsl(await readFile(this.certPath.root));
+
+    while (ready.size !== nodes.length) {
+      for (const node of nodes) {
+        if (ready.has(node)) continue;
+
+        try {
+          const location = this.locations[nodes.indexOf(node)];
+          const deadline = new Date(Date.now() + 5_000);
+          const members = await listClusterMembers(
+            { address: this.domain, port: location.port },
+            credentials,
+            deadline
+          );
+
+          const liveMembers = members.filter(({ isAlive }) => isAlive);
+          const leaders = liveMembers.filter(
+            ({ state }) => state === VNodeState.LEADER
+          );
+
+          if (
+            liveMembers.length === this.count &&
+            leaders.length === 1 &&
+            liveMembers.every(({ state }) => state !== VNodeState.UNKNOWN)
+          ) {
+            ready.add(node);
+
+            testDebug(`--> ${node} is ready`);
+          }
+        } catch (error) {
+          // retry
+        }
+      }
+    }
+  };
+
+  private acceptingAuthenticatedRequests = async () => {
+    const ready = new Set<string>();
+    const nodes = Array.from(
+      { length: this.count },
+      (_, i) => `trogon-eventstore-node-${i}`
+    );
 
     while (ready.size !== nodes.length) {
       for (const node of nodes) {
@@ -514,28 +577,46 @@ export class Cluster {
         try {
           const response = await exec(
             node,
-            `curl --fail --insecure http${
+            `curl --fail --insecure --user admin:changeit --output /dev/null http${
               this.insecure ? "" : "s"
-            }://localhost:2113/gossip`,
+            }://localhost:2113/ui/queue-dashboard/payload`,
             { cwd: this.path() }
           );
 
-          interface Member {
-            state: "Unknown" | "Leader" | "Follower";
-          }
-
-          const { members } = JSON.parse(response.out) as { members: Member[] };
-
-          if (
-            members.every(({ state }) => state !== "Unknown") &&
-            members.some(({ state }) => state === "Leader")
-          ) {
+          if (response.exitCode === 0) {
             ready.add(node);
-
-            testDebug(`--> ${node} is ready`);
           }
         } catch (error) {
           // retry
+        }
+      }
+    }
+  };
+
+  private acceptingClientReads = async () => {
+    const ready = new Set<number>();
+
+    while (ready.size !== this.locations.length) {
+      for (const [index, location] of this.locations.entries()) {
+        if (ready.has(index)) continue;
+
+        const client = TrogonEventStoreClient.connectionString(
+          this.connectionStringWithOverrides({
+            endpoints: [{ address: this.domain, port: location.port }],
+            defaultDeadline: 5_000,
+          })
+        );
+
+        try {
+          for await (const _ of client.readAll({ maxCount: 1 })) {
+            break;
+          }
+
+          ready.add(index);
+        } catch (error) {
+          // The read index can become available after the HTTP health endpoint.
+        } finally {
+          await client.dispose();
         }
       }
     }
@@ -567,6 +648,6 @@ export class Cluster {
       throw new Error(`unknown node ${endpoint.address}:${endpoint.port}`);
     }
 
-    return `kdb-node-${index}`;
+    return `trogon-eventstore-node-${index}`;
   };
 }

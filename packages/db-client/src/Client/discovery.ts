@@ -1,7 +1,7 @@
 import { ChannelCredentials, Metadata } from "@grpc/grpc-js";
 
-import { GossipClient } from "../../generated/kurrentdb/protocols/v1/gossip_grpc_pb";
-import { Empty } from "../../generated/kurrentdb/protocols/v1/shared_pb";
+import { GossipClient } from "../../generated/event_store/protocols/v1/gossip_grpc_pb";
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
 
 import { EndPoint, NodePreference, VNodeState } from "../types";
 import { FOLLOWER, LEADER, READ_ONLY_REPLICA } from "../constants";
@@ -154,7 +154,7 @@ function createDeadline(seconds: number) {
   return deadline;
 }
 
-function listClusterMembers(
+export function listClusterMembers(
   seed: EndPoint,
   credentials: ChannelCredentials,
   deadline: Date

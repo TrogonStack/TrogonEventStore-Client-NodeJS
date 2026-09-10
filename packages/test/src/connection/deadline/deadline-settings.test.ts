@@ -1,4 +1,7 @@
-import { DNSClusterOptions, KurrentDBClient } from "@kurrent/kurrentdb-client";
+import {
+  DNSClusterOptions,
+  TrogonEventStoreClient,
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("deadline", () => {
   describe.each<
@@ -10,24 +13,24 @@ describe("deadline", () => {
   >([
     [
       "should throw on zero",
-      "kurrentdb://host?defaultDeadline=0",
+      "esdb://host?defaultDeadline=0",
       { defaultDeadline: 0 },
     ],
     [
       "should throw on negative",
-      "kurrentdb://host?defaultDeadline=-1",
+      "esdb://host?defaultDeadline=-1",
       { defaultDeadline: -1 },
     ],
     [
       "should throw on negative",
-      "kurrentdb://host?defaultDeadline=-1000000000000000",
+      "esdb://host?defaultDeadline=-1000000000000000",
       { defaultDeadline: -1000000000000000 },
     ],
   ])("%s", (_, connectionString, constructorOptions) => {
     test.each([
       [
         "connectionString",
-        () => KurrentDBClient.connectionString(connectionString),
+        () => TrogonEventStoreClient.connectionString(connectionString),
       ],
     ])("%s", async (_, createClient) => {
       expect(() => createClient()).toThrowErrorMatchingSnapshot();

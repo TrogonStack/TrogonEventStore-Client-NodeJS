@@ -1,8 +1,8 @@
 import type { DuplexOptions } from "stream";
 
-import { Empty } from "../../generated/kurrentdb/protocols/v1/shared_pb";
-import { ReadReq } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_pb";
-import { PersistentSubscriptionsClient } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_grpc_pb";
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
+import { ReadReq } from "../../generated/event_store/protocols/v1/persistentsubscriptions_pb";
+import { PersistentSubscriptionsClient } from "../../generated/event_store/protocols/v1/persistentsubscriptions_grpc_pb";
 
 import type {
   PersistentSubscriptionToStream,

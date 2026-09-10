@@ -1,4 +1,4 @@
-import type { StatisticsResp } from "../../../generated/kurrentdb/protocols/v1/projectionmanagement_pb";
+import type { StatisticsResp } from "../../../generated/event_store/protocols/v1/projectionmanagement_pb";
 
 import type {
   ProcessingStatus,

@@ -2,7 +2,7 @@
 
 import {
   AllStreamResolvedEvent,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   JSONEventType,
   PARK,
@@ -11,7 +11,7 @@ import {
   ResolvedEvent,
   START,
   streamNameFilter,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 import {
   createTestNode,
   jsonTestEvents,
@@ -26,12 +26,12 @@ describe("[sample] persistent-subscriptions", () => {
   const node = createTestNode();
   const log = console.log;
 
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
 
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
 
     await client.appendToStream("some-stream", jsonTestEvents());
     console.log = jest.fn(log);

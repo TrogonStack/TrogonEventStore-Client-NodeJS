@@ -1,14 +1,14 @@
 import { createTestNode } from "@test-utils";
 
-import { KurrentDBClient } from "@kurrent/kurrentdb-client";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client";
 
 describe("restartSubsystem", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

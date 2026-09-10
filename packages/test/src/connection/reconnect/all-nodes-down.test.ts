@@ -1,11 +1,11 @@
 import { collect, createTestCluster, delay } from "@test-utils";
 import {
   jsonEvent,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   UnavailableError,
   persistentSubscriptionToStreamSettingsFromDefaults,
   StreamNotFoundError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 // This test can take time.
 jest.setTimeout(120_000);
@@ -19,12 +19,12 @@ const STREAM_NAME = "my_stream";
 // flaky test
 describe.skip("reconnect", () => {
   const cluster = createTestCluster();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await cluster.up();
 
-    client = KurrentDBClient.connectionString(
+    client = TrogonEventStoreClient.connectionString(
       cluster.connectionStringWithOverrides({
         defaultDeadline: 100_000_000,
       })

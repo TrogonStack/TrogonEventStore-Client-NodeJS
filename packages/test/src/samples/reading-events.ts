@@ -1,12 +1,12 @@
 import {
   START,
   FORWARDS,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   StreamNotFoundError,
   BACKWARDS,
   END,
   JSONEventType,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 import { createTestNode, jsonTestEvents } from "@test-utils";
 
 type SomeEvent = JSONEventType<
@@ -20,11 +20,11 @@ type SomeEvent = JSONEventType<
 describe("[sample] reading-events", () => {
   const log = console.log;
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
 
     await client.appendToStream("some-stream", jsonTestEvents());
     console.log = jest.fn();

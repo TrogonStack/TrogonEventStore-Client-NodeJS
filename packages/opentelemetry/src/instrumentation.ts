@@ -8,7 +8,6 @@ import {
   Span,
   SpanKind,
   SpanStatusCode,
-  TimeInput,
   trace,
   TraceFlags,
   Tracer,
@@ -18,31 +17,27 @@ import {
   InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
 } from "@opentelemetry/instrumentation";
-import type * as kurrentdb from "@kurrent/kurrentdb-client";
+import type * as trogonEventStore from "@trogonstack/trogon-eventstore-client";
 import type {
-  AppendRecordsResult,
   AppendResult,
   BinaryEventType,
   EventData,
   EventType,
   JSONEventType,
-  MultiAppendResult,
   ResolvedEvent,
   SubscribeToAllOptions,
   SubscribeToPersistentSubscriptionToAllOptions,
   SubscribeToPersistentSubscriptionToStreamOptions,
   SubscribeToStreamOptions,
-} from "@kurrent/kurrentdb-client";
-import type { ReadResp as StreamsReadResp } from "@kurrent/kurrentdb-client/generated/kurrentdb/protocols/v1/streams_pb";
-import type { ReadResp as PersistentReadResp } from "@kurrent/kurrentdb-client/generated/kurrentdb/protocols/v1/persistentsubscriptions_pb";
-import { KurrentAttributes } from "./attributes";
-import type { PersistentSubscriptionImpl } from "@kurrent/kurrentdb-client/src/persistentSubscription/utils/PersistentSubscriptionImpl";
-import type { Subscription } from "@kurrent/kurrentdb-client/src/streams/utils/Subscription";
+} from "@trogonstack/trogon-eventstore-client";
+import type { ReadResp as StreamsReadResp } from "@trogonstack/trogon-eventstore-client/generated/event_store/protocols/v1/streams_pb";
+import type { ReadResp as PersistentReadResp } from "@trogonstack/trogon-eventstore-client/generated/event_store/protocols/v1/persistentsubscriptions_pb";
+import { TrogonEventStoreAttributes } from "./attributes";
+import type { PersistentSubscriptionImpl } from "@trogonstack/trogon-eventstore-client/src/persistentSubscription/utils/PersistentSubscriptionImpl";
+import type { Subscription } from "@trogonstack/trogon-eventstore-client/src/streams/utils/Subscription";
 import { INSTRUMENTATION_NAME, INSTRUMENTATION_VERSION } from "./version";
 import type {
-  AppendRecordsParams,
   AppendToStreamParams,
-  MultiStreamAppendParams,
   PersistentSubscribeParameters,
   SubscribeParameters,
 } from "./types";
@@ -63,47 +58,37 @@ export class Instrumentation extends InstrumentationBase {
 
   protected init() {
     return new InstrumentationNodeModuleDefinition(
-      "@kurrent/kurrentdb-client",
-      ["1.*"],
+      "@trogonstack/trogon-eventstore-client",
+      ["0.*", "1.*"],
       this._onPatchMain(),
       this._onUnPatchMain()
     );
   }
 
   private _onPatchMain() {
-    return (moduleExports: typeof kurrentdb) => {
+    return (moduleExports: typeof trogonEventStore) => {
       this.wrap(
-        moduleExports.KurrentDBClient.prototype,
+        moduleExports.TrogonEventStoreClient.prototype,
         "appendToStream",
         this._patchAppendToStream()
       );
       this.wrap(
-        moduleExports.KurrentDBClient.prototype,
-        "multiStreamAppend",
-        this._patchMultiStreamAppend()
-      );
-      this.wrap(
-        moduleExports.KurrentDBClient.prototype,
-        "appendRecords",
-        this._patchAppendRecords()
-      );
-      this.wrap(
-        moduleExports.KurrentDBClient.prototype,
+        moduleExports.TrogonEventStoreClient.prototype,
         "subscribeToStream",
         this._patchCatchUpSubscription()
       );
       this.wrap(
-        moduleExports.KurrentDBClient.prototype,
+        moduleExports.TrogonEventStoreClient.prototype,
         "subscribeToAll",
         this._patchCatchUpSubscription()
       );
       this.wrap(
-        moduleExports.KurrentDBClient.prototype,
+        moduleExports.TrogonEventStoreClient.prototype,
         "subscribeToPersistentSubscriptionToStream",
         this._patchPersistentSubscription()
       );
       this.wrap(
-        moduleExports.KurrentDBClient.prototype,
+        moduleExports.TrogonEventStoreClient.prototype,
         "subscribeToPersistentSubscriptionToAll",
         this._patchPersistentSubscription()
       );
@@ -122,25 +107,23 @@ export class Instrumentation extends InstrumentationBase {
   }
 
   private _onUnPatchMain() {
-    return (moduleExports: typeof kurrentdb) => {
+    return (moduleExports: typeof trogonEventStore) => {
       this._diag.debug("un-patching");
 
-      this._unwrap(moduleExports.KurrentDBClient.prototype, "appendToStream");
       this._unwrap(
-        moduleExports.KurrentDBClient.prototype,
-        "multiStreamAppend"
+        moduleExports.TrogonEventStoreClient.prototype,
+        "appendToStream"
       );
-      this._unwrap(moduleExports.KurrentDBClient.prototype, "appendRecords");
       this._unwrap(
-        moduleExports.KurrentDBClient.prototype,
+        moduleExports.TrogonEventStoreClient.prototype,
         "subscribeToStream"
       );
       this._unwrap(
-        moduleExports.KurrentDBClient.prototype,
+        moduleExports.TrogonEventStoreClient.prototype,
         "subscribeToPersistentSubscriptionToStream"
       );
       this._unwrap(
-        moduleExports.KurrentDBClient.prototype,
+        moduleExports.TrogonEventStoreClient.prototype,
         "subscribeToPersistentSubscriptionToAll"
       );
     };
@@ -148,17 +131,17 @@ export class Instrumentation extends InstrumentationBase {
 
   private _patchAppendToStream(): (
     original: Function,
-    operation: keyof kurrentdb.KurrentDBClient
+    operation: keyof trogonEventStore.TrogonEventStoreClient
   ) => (...args: AppendToStreamParams) => Promise<AppendResult> {
     const instrumentation = this;
     const tracer = instrumentation.tracer;
 
     return function appendToStream(
       original: Function,
-      operation: keyof kurrentdb.KurrentDBClient
+      operation: keyof trogonEventStore.TrogonEventStoreClient
     ) {
       return async function (
-        this: kurrentdb.KurrentDBClient,
+        this: trogonEventStore.TrogonEventStoreClient,
         ...args: AppendToStreamParams
       ): Promise<AppendResult> {
         const [streamName, events, options] = [...args];
@@ -168,11 +151,11 @@ export class Instrumentation extends InstrumentationBase {
         const { hostname, port } = Instrumentation.getServerAddress(uri);
 
         const attributes: Attributes = {
-          [KurrentAttributes.KURRENT_DB_STREAM]: streamName,
-          [KurrentAttributes.SERVER_ADDRESS]: hostname,
-          [KurrentAttributes.SERVER_PORT]: port,
-          [KurrentAttributes.DATABASE_SYSTEM]: INSTRUMENTATION_NAME,
-          [KurrentAttributes.DATABASE_OPERATION]: operation,
+          [TrogonEventStoreAttributes.TROGON_EVENT_STORE_STREAM]: streamName,
+          [TrogonEventStoreAttributes.SERVER_ADDRESS]: hostname,
+          [TrogonEventStoreAttributes.SERVER_PORT]: port,
+          [TrogonEventStoreAttributes.DATABASE_SYSTEM]: INSTRUMENTATION_NAME,
+          [TrogonEventStoreAttributes.DATABASE_OPERATION]: operation,
         };
 
         const auth = describeAuth(
@@ -180,16 +163,20 @@ export class Instrumentation extends InstrumentationBase {
           Boolean(this.credentialsProvider)
         );
         if (auth.username !== undefined) {
-          attributes[KurrentAttributes.DATABASE_USER] = auth.username;
+          attributes[TrogonEventStoreAttributes.DATABASE_USER] = auth.username;
         }
         if (auth.kind !== undefined) {
-          attributes[KurrentAttributes.KURRENT_DB_AUTH_KIND] = auth.kind;
+          attributes[TrogonEventStoreAttributes.TROGON_EVENT_STORE_AUTH_KIND] =
+            auth.kind;
         }
 
-        const span = tracer.startSpan(KurrentAttributes.STREAM_APPEND, {
-          kind: SpanKind.CLIENT,
-          attributes,
-        });
+        const span = tracer.startSpan(
+          TrogonEventStoreAttributes.STREAM_APPEND,
+          {
+            kind: SpanKind.CLIENT,
+            attributes,
+          }
+        );
 
         if (Array.isArray(events)) {
           actualEvents = events;
@@ -220,127 +207,6 @@ export class Instrumentation extends InstrumentationBase {
           return result;
         } catch (error) {
           throw Instrumentation.handleError(error, span);
-        } finally {
-          span.end();
-        }
-      };
-    };
-  }
-
-  private _patchMultiStreamAppend(): (
-    original: Function,
-    operation: keyof kurrentdb.KurrentDBClient
-  ) => (...args: MultiStreamAppendParams) => Promise<MultiAppendResult> {
-    const instrumentation = this;
-    const tracer = instrumentation.tracer;
-
-    return function multiStreamAppend(
-      original: Function,
-      operation: keyof kurrentdb.KurrentDBClient
-    ) {
-      return async function (
-        this: kurrentdb.KurrentDBClient,
-        ...args: MultiStreamAppendParams
-      ): Promise<MultiAppendResult> {
-        const [requests] = [...args];
-
-        const uri = await this.resolveUri();
-        const { hostname, port } = Instrumentation.getServerAddress(uri);
-
-        const requestStartTime: TimeInput = Date.now();
-
-        const span = tracer.startSpan(KurrentAttributes.STREAM_MULTI_APPEND, {
-          kind: SpanKind.CLIENT,
-          startTime: requestStartTime,
-          attributes: {
-            [KurrentAttributes.SERVER_ADDRESS]: hostname,
-            [KurrentAttributes.SERVER_PORT]: port,
-            [KurrentAttributes.DATABASE_SYSTEM]: INSTRUMENTATION_NAME,
-            [KurrentAttributes.DATABASE_OPERATION]: operation,
-          },
-        });
-
-        requests.forEach((request) => {
-          const traceId = span.spanContext().traceId;
-          const spanId = span.spanContext().spanId;
-
-          request.events.forEach((event) => {
-            const metadata = (event.metadata = event.metadata || {});
-            if (isJSONEventData(event) && typeof metadata === "object") {
-              event.metadata = {
-                ...metadata,
-                [TRACE_ID]: traceId,
-                [SPAN_ID]: spanId,
-              };
-            }
-          });
-        });
-
-        try {
-          return await original.apply(this, [requests]);
-        } catch (error) {
-          Instrumentation.handleError(error, span);
-          throw error;
-        } finally {
-          span.end();
-        }
-      };
-    };
-  }
-
-  private _patchAppendRecords(): (
-    original: Function,
-    operation: keyof kurrentdb.KurrentDBClient
-  ) => (...args: AppendRecordsParams) => Promise<AppendRecordsResult> {
-    const instrumentation = this;
-    const tracer = instrumentation.tracer;
-
-    return function appendRecords(
-      original: Function,
-      operation: keyof kurrentdb.KurrentDBClient
-    ) {
-      return async function (
-        this: kurrentdb.KurrentDBClient,
-        ...args: AppendRecordsParams
-      ): Promise<AppendRecordsResult> {
-        const [records] = [...args];
-
-        const uri = await this.resolveUri();
-        const { hostname, port } = Instrumentation.getServerAddress(uri);
-
-        const requestStartTime: TimeInput = Date.now();
-
-        const span = tracer.startSpan(KurrentAttributes.STREAM_MULTI_APPEND, {
-          kind: SpanKind.CLIENT,
-          startTime: requestStartTime,
-          attributes: {
-            [KurrentAttributes.SERVER_ADDRESS]: hostname,
-            [KurrentAttributes.SERVER_PORT]: port,
-            [KurrentAttributes.DATABASE_SYSTEM]: INSTRUMENTATION_NAME,
-            [KurrentAttributes.DATABASE_OPERATION]: operation,
-          },
-        });
-
-        const traceId = span.spanContext().traceId;
-        const spanId = span.spanContext().spanId;
-
-        records.forEach((record) => {
-          const metadata = (record.record.metadata =
-            record.record.metadata || {});
-          if (isJSONEventData(record.record) && typeof metadata === "object") {
-            record.record.metadata = {
-              ...metadata,
-              [TRACE_ID]: traceId,
-              [SPAN_ID]: spanId,
-            };
-          }
-        });
-
-        try {
-          return await original.apply(this, [records, args[1]]);
-        } catch (error) {
-          Instrumentation.handleError(error, span);
-          throw error;
         } finally {
           span.end();
         }
@@ -381,21 +247,27 @@ export class Instrumentation extends InstrumentationBase {
       const subscriptionId = subscription.id;
 
       const attributes: Attributes = {
-        [KurrentAttributes.KURRENT_DB_STREAM]: resolvedEvent?.event?.streamId,
-        [KurrentAttributes.KURRENT_DB_EVENT_ID]: resolvedEvent?.event?.id,
-        [KurrentAttributes.KURRENT_DB_EVENT_TYPE]: resolvedEvent?.event?.type,
-        [KurrentAttributes.KURRENT_DB_SUBSCRIPTION_ID]: subscriptionId,
-        [KurrentAttributes.SERVER_ADDRESS]: hostname,
-        [KurrentAttributes.SERVER_PORT]: port,
-        [KurrentAttributes.DATABASE_SYSTEM]: INSTRUMENTATION_NAME,
-        [KurrentAttributes.DATABASE_OPERATION]: operation,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_STREAM]:
+          resolvedEvent?.event?.streamId,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_ID]:
+          resolvedEvent?.event?.id,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_EVENT_TYPE]:
+          resolvedEvent?.event?.type,
+        [TrogonEventStoreAttributes.TROGON_EVENT_STORE_SUBSCRIPTION_ID]:
+          subscriptionId,
+        [TrogonEventStoreAttributes.SERVER_ADDRESS]: hostname,
+        [TrogonEventStoreAttributes.SERVER_PORT]: port,
+        [TrogonEventStoreAttributes.DATABASE_SYSTEM]: INSTRUMENTATION_NAME,
+        [TrogonEventStoreAttributes.DATABASE_OPERATION]: operation,
       };
 
       if (authContext.username !== undefined) {
-        attributes[KurrentAttributes.DATABASE_USER] = authContext.username;
+        attributes[TrogonEventStoreAttributes.DATABASE_USER] =
+          authContext.username;
       }
       if (authContext.kind !== undefined) {
-        attributes[KurrentAttributes.KURRENT_DB_AUTH_KIND] = authContext.kind;
+        attributes[TrogonEventStoreAttributes.TROGON_EVENT_STORE_AUTH_KIND] =
+          authContext.kind;
       }
 
       const span = tracer.startSpan(
@@ -419,17 +291,17 @@ export class Instrumentation extends InstrumentationBase {
 
   private _patchCatchUpSubscription(): (
     original: Function,
-    operation: keyof kurrentdb.KurrentDBClient
+    operation: keyof trogonEventStore.TrogonEventStoreClient
   ) => (...args: any) => any {
     const instrumentation = this;
     const tracer = instrumentation.tracer;
 
     return function subscribe<KnownEventType extends EventType = EventType>(
       original: Function,
-      operation: keyof kurrentdb.KurrentDBClient
+      operation: keyof trogonEventStore.TrogonEventStoreClient
     ) {
       return function (
-        this: kurrentdb.KurrentDBClient,
+        this: trogonEventStore.TrogonEventStoreClient,
         ...args: SubscribeParameters
       ) {
         let options:
@@ -455,7 +327,7 @@ export class Instrumentation extends InstrumentationBase {
 
         this.resolveUri().then((uri) =>
           Instrumentation.applySubscriptionInstrumentation(
-            KurrentAttributes.STREAM_SUBSCRIBE,
+            TrogonEventStoreAttributes.STREAM_SUBSCRIBE,
             subscription,
             uri,
             operation,
@@ -471,17 +343,17 @@ export class Instrumentation extends InstrumentationBase {
 
   private _patchPersistentSubscription(): (
     original: Function,
-    operation: keyof kurrentdb.KurrentDBClient
+    operation: keyof trogonEventStore.TrogonEventStoreClient
   ) => (...args: any) => any {
     const instrumentation = this;
     const tracer = instrumentation.tracer;
 
     return function subscribe<E>(
       original: Function,
-      operation: keyof kurrentdb.KurrentDBClient
+      operation: keyof trogonEventStore.TrogonEventStoreClient
     ) {
       return function (
-        this: kurrentdb.KurrentDBClient,
+        this: trogonEventStore.TrogonEventStoreClient,
         ...args: PersistentSubscribeParameters
       ) {
         let options:
@@ -507,7 +379,7 @@ export class Instrumentation extends InstrumentationBase {
 
         this.resolveUri().then((uri) =>
           Instrumentation.applySubscriptionInstrumentation(
-            KurrentAttributes.STREAM_SUBSCRIBE,
+            TrogonEventStoreAttributes.STREAM_SUBSCRIBE,
             subscription,
             uri,
             operation,
@@ -521,7 +393,7 @@ export class Instrumentation extends InstrumentationBase {
   }
 
   private static restoreContext = (
-    metadata: kurrentdb.MetadataType,
+    metadata: trogonEventStore.MetadataType,
     isRemote = true
   ): Context => {
     const traceId = metadata[TRACE_ID] as string;

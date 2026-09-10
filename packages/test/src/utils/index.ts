@@ -3,7 +3,7 @@ import {
   BasicCredentials,
   EndPoint,
   NodePreference,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 export type ConnectionFeatures = {
   defaultUserCredentials?: BasicCredentials;
@@ -32,4 +32,3 @@ export * from "./testEvents";
 export * from "./getCurrentConnection";
 export * from "./matchServerVersion";
 export * from "./optionalDescribe";
-export * from "./postEventViaHttpApi";

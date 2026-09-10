@@ -4,16 +4,16 @@ import { createTestNode, matchServerVersion } from "@test-utils";
 
 import {
   ABORTED,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   NotFoundError,
   RUNNING,
   STOPPED,
   UnknownError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("enableProjection", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   const projection = `
   fromAll()
@@ -28,7 +28,7 @@ describe("enableProjection", () => {
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {
@@ -50,7 +50,6 @@ describe("enableProjection", () => {
       expect(beforeDetails.projectionStatus).toBe(STOPPED);
     } else {
       // Incorrect projection status was switched (ABORTED -> STOPPED) in
-      // https://github.com/kurrent-io/EventStore/pull/2944
       expect([STOPPED, ABORTED]).toContain(beforeDetails.projectionStatus);
     }
 

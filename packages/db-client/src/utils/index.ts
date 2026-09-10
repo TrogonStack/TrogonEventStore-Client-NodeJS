@@ -7,6 +7,4 @@ export * from "./grpcStreamIdentifier";
 export * from "./grpcUUID";
 export * from "./utilityTypes";
 export * from "./isClientCancellationError";
-export * from "./mapToValue";
-export * from "./schema";
 export * from "./getGrpcStatusDetails";

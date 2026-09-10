@@ -3,21 +3,21 @@ import { randomUUID as uuid } from "crypto";
 import { createTestNode } from "@test-utils";
 import {
   AppendResult,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   EventType,
   jsonEvent,
   JSONEventType,
   RecordedEvent,
   ResolvedEvent,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("typed events should compile", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {
@@ -35,7 +35,7 @@ describe("typed events should compile", () => {
         when: EventAggregator<Entity, StreamEvents>
       ) =>
       async (
-        eventStream: AsyncIterableIterator<ResolvedEvent<StreamEvents>>
+        eventStream: AsyncIterable<ResolvedEvent<StreamEvents>>
       ): Promise<Entity> => {
         let currentState: Entity | undefined = undefined;
         for await (const { event } of eventStream) {
@@ -156,7 +156,7 @@ describe("typed events should compile", () => {
 
     const create =
       <Command, StreamEvent extends JSONEventType>(
-        client: KurrentDBClient,
+        client: TrogonEventStoreClient,
         handle: (command: Command) => StreamEvent
       ) =>
       (streamName: string, command: Command): Promise<AppendResult> => {

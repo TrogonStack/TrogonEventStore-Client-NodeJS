@@ -1,8 +1,6 @@
 import { existsSync, readFileSync } from "fs";
 import { isAbsolute, resolve } from "path";
 import { Readable, Writable, Duplex, finished } from "stream";
-import * as bridge from "@kurrent/bridge";
-
 import { randomUUID } from "crypto";
 
 import {
@@ -141,7 +139,6 @@ interface NextChannelSettings {
 }
 
 export class Client {
-  #rustClient: bridge.RustClient;
   #throwOnAppendFailure: boolean;
   #connectionSettings: ConnectionSettings;
   #channelCredentials: ChannelCredentials;
@@ -251,7 +248,6 @@ export class Client {
       channelCredentials.userCertFile = readFileSync(certPathResolved);
     }
 
-    const rustClient = bridge.createClient(string);
     if (options.dnsDiscover) {
       const [discover] = options.hosts;
 
@@ -262,7 +258,6 @@ export class Client {
       }
 
       return new Client(
-        rustClient,
         {
           discover,
           nodePreference: options.nodePreference,
@@ -282,7 +277,6 @@ export class Client {
 
     if (options.hosts.length > 1) {
       return new Client(
-        rustClient,
         {
           endpoints: options.hosts,
           nodePreference: options.nodePreference,
@@ -301,7 +295,6 @@ export class Client {
     }
 
     return new Client(
-      rustClient,
       {
         endpoint: options.hosts[0],
         throwOnAppendFailure: options.throwOnAppendFailure,
@@ -316,25 +309,21 @@ export class Client {
   }
 
   protected constructor(
-    rustClient: bridge.RustClient,
     connectionSettings: DNSClusterOptions,
     channelCredentials?: ChannelCredentialOptions,
     defaultUserCredentials?: BasicCredentials
   );
   protected constructor(
-    rustClient: bridge.RustClient,
     connectionSettings: GossipClusterOptions,
     channelCredentials?: ChannelCredentialOptions,
     defaultUserCredentials?: BasicCredentials
   );
   protected constructor(
-    rustClient: bridge.RustClient,
     connectionSettings: SingleNodeOptions,
     channelCredentials?: ChannelCredentialOptions,
     defaultUserCredentials?: BasicCredentials
   );
   protected constructor(
-    rustClient: bridge.RustClient,
     {
       throwOnAppendFailure = true,
       keepAliveInterval = 10_000,
@@ -370,7 +359,6 @@ export class Client {
       );
     }
 
-    this.#rustClient = rustClient;
     this.#throwOnAppendFailure = throwOnAppendFailure;
     this.#keepAliveInterval = keepAliveInterval;
     this.#keepAliveTimeout = keepAliveTimeout;
@@ -624,7 +612,7 @@ export class Client {
         this.#keepAliveTimeout < 0 ? Number.MAX_VALUE : this.#keepAliveTimeout,
       // EventStore allows events of up to 16mb to be written internally.
       // While you can't write events this large through gRPC, you could do so through the TCP client, or through projections.
-      // To allow the client to read any event that KurrentDB was able to write, we want to hardcode the max receive message length to 17mb.
+      // To allow the client to read any event that TrogonEventStore was able to write, we want to hardcode the max receive message length to 17mb.
       "grpc.max_receive_message_length": 17 * 1024 * 1024,
     });
   };
@@ -704,20 +692,6 @@ export class Client {
     return undefined;
   };
 
-  /**
-   * Resolve the {@link Credentials} value to forward to the Rust bridge for
-   * a given request. Per-call credentials win. Otherwise we invoke the
-   * configured {@link CredentialsProvider}. Falls back to `undefined` so the
-   * bridge uses the credentials baked into its connection string.
-   */
-  protected resolveBridgeCredentials = async (
-    perCallCredentials?: Credentials
-  ): Promise<Credentials | undefined> => {
-    if (perCallCredentials) return perCallCredentials;
-    if (this.#credentialsProvider) return await this.#credentialsProvider();
-    return undefined;
-  };
-
   protected callArguments = (
     { credentials, requiresLeader, deadline }: BaseOptions,
     callOptions?: CallOptions
@@ -779,8 +753,5 @@ export class Client {
 
   protected get throwOnAppendFailure(): boolean {
     return this.#throwOnAppendFailure;
-  }
-  public get rustClient(): bridge.RustClient {
-    return this.#rustClient;
   }
 }

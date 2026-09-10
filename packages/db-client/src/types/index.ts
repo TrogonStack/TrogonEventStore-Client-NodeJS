@@ -5,7 +5,7 @@ import type {
   ChannelCredentials,
 } from "@grpc/grpc-js";
 
-import { MemberInfo as GrpcMemberInfo } from "../../generated/kurrentdb/protocols/v1/gossip_pb";
+import { MemberInfo as GrpcMemberInfo } from "../../generated/event_store/protocols/v1/gossip_pb";
 import VNodeState = GrpcMemberInfo.VNodeState;
 
 import type {
@@ -14,7 +14,6 @@ import type {
   EventType,
   PersistentSubscriptionToAllResolvedEvent,
   PersistentSubscriptionToStreamResolvedEvent,
-  EventData,
 } from "./events";
 
 import type * as constants from "../constants";
@@ -36,7 +35,7 @@ export interface BaseOptions {
 }
 
 /**
- * A structure referring to a potential logical record position in the KurrentDB transaction file.
+ * A structure referring to a potential logical record position in the TrogonEventStore transaction file.
  */
 export type Position = {
   commit: bigint;
@@ -55,10 +54,10 @@ export type ReadPosition =
 
 /**
  * Constants used for expected version control. The use of expected version can be a bit tricky especially when
- * discussing assurances given by the KurrentDB server.
+ * discussing assurances given by the TrogonEventStore server.
  *
- * The KurrentDB server will assure idempotency for all operations using any value in ExpectedVersion except
- * {@link ANY}. When using {@link ANY}., the KurrentDB server will do its best to assure
+ * The TrogonEventStore server will assure idempotency for all operations using any value in ExpectedVersion except
+ * {@link ANY}. When using {@link ANY}., the TrogonEventStore server will do its best to assure
  * idempotency but will not guarantee idempotency.
  */
 export type StreamState =
@@ -107,7 +106,7 @@ export interface AppendResult {
    */
   nextExpectedRevision: bigint;
   /**
-   * The logical record position in the KurrentDB transaction file.
+   * The logical record position in the TrogonEventStore transaction file.
    */
   position?: Position;
 }
@@ -334,7 +333,7 @@ export interface PrefixesFilter extends FilterBase {
 export type Filter = RegexFilter | PrefixesFilter;
 
 /**
- * Username/password credentials used to authenticate against KurrentDB,
+ * Username/password credentials used to authenticate against TrogonEventStore,
  * rendered as an HTTP Basic `Authorization` header.
  */
 export interface BasicCredentials {
@@ -343,7 +342,7 @@ export interface BasicCredentials {
 }
 
 /**
- * Bearer-token credentials used to authenticate against KurrentDB, rendered
+ * Bearer-token credentials used to authenticate against TrogonEventStore, rendered
  * as an HTTP Bearer `Authorization` header. Bearer tokens are
  * programmatic-only and cannot be supplied via a connection string.
  */
@@ -560,112 +559,6 @@ export interface FellBehind {
    */
   position?: Position;
 }
-
-export interface AppendStreamRequest<
-  KnownEventType extends EventType = EventType
-> {
-  streamName: string;
-  events: EventData<KnownEventType>[];
-  expectedState: AppendStreamState;
-}
-
-export interface AppendResponse {
-  streamName: string;
-  revision: bigint;
-}
-
-export interface BaseAppendErrorDetails {
-  type: string;
-}
-
-export type AppendErrorDetails =
-  | ({ type: "unknown" } & BaseAppendErrorDetails)
-  | ({ type: "access_denied"; reason: string } & BaseAppendErrorDetails)
-  | ({ type: "stream_deleted" } & BaseAppendErrorDetails)
-  | ({
-      type: "wrong_expected_revision";
-      revision: bigint;
-    } & BaseAppendErrorDetails)
-  | ({
-      type: "transaction_max_size_exceeded";
-      maxSize: number;
-    } & BaseAppendErrorDetails);
-
-export const UnknownErrorDetails: AppendErrorDetails = {
-  type: "unknown",
-} as const;
-
-export type MultiAppendResult = {
-  position: bigint;
-  responses: AppendResponse[];
-};
-
-/**
- * Represents a record to be appended in an {@link Client.appendRecords} operation.
- * Each record specifies its own target stream, allowing interleaved writes across multiple streams.
- */
-export interface AppendRecordInput<
-  KnownEventType extends EventType = EventType
-> {
-  /**
-   * The name of the target stream for this record.
-   */
-  streamName: string;
-  /**
-   * The record data to append.
-   */
-  record: EventData<KnownEventType>;
-}
-
-/**
- * Represents a consistency check to be evaluated before committing an {@link Client.appendRecords} operation.
- * Checks are decoupled from writes: a check can reference any stream, whether or not the request writes to it.
- */
-export type ConsistencyCheck = StreamStateCheck;
-
-/**
- * A check that asserts a stream is at a specific revision or lifecycle state before commit.
- */
-export interface StreamStateCheck {
-  type: typeof constants.STREAM_STATE;
-  /**
-   * The stream name to check.
-   */
-  streamName: string;
-  /**
-   * The expected state of the stream (revision number or state constant).
-   */
-  expectedState: AppendStreamState;
-}
-
-/**
- * Details of a single consistency check violation.
- */
-export interface ConsistencyViolation {
-  /**
-   * Index of the check in the original checks list.
-   */
-  checkIndex: number;
-  /**
-   * The stream whose state was checked.
-   */
-  streamName: string;
-  /**
-   * The expected state of the stream.
-   */
-  expectedState: AppendStreamState;
-  /**
-   * The actual state of the stream at the time the check was evaluated.
-   * Specific revision (bigint >= 0), or "no_stream" if the stream doesn't exist.
-   * Deleted streams return -5n and tombstoned streams return -6n.
-   */
-  actualState: CurrentStreamState;
-}
-
-/**
- * Result of a successful {@link Client.appendRecords} operation.
- */
-export type AppendRecordsResult = MultiAppendResult;
 
 // Other listeners that are only supported in catch-up subscriptions
 export interface CatchupSubscription {

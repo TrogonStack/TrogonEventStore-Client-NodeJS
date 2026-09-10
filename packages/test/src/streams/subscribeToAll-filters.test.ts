@@ -9,7 +9,7 @@ import {
   optionalTest,
 } from "@test-utils";
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   ResolvedEvent,
   streamNameFilter,
@@ -18,18 +18,18 @@ import {
   excludeSystemEvents,
   AllStreamSubscription,
   Position,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("subscribeToAll", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   const STREAM_NAME_A = "stream_name_a";
   const STREAM_NAME_B = "stream_name_b";
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
 
     await client.appendToStream(STREAM_NAME_A, jsonTestEvents(4));
     await client.appendToStream(STREAM_NAME_B, jsonTestEvents(4));
@@ -182,7 +182,6 @@ describe("subscribeToAll", () => {
     });
 
     // checkpoints behaviour was fixed in
-    // https://github.com/kurrent-io/EventStore/pull/2608
     optionalTest(matchServerVersion`>=21.10`)("checkpoints", async () => {
       const defer = new Defer();
       const FINISH_TEST = "checkpoints-finish";

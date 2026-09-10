@@ -1,8 +1,8 @@
 import {
   PersistentSubscriptionsClient,
   PersistentSubscriptionsService,
-} from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_grpc_pb";
-import { ListReq } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_pb";
+} from "../../generated/event_store/protocols/v1/persistentsubscriptions_grpc_pb";
+import { ListReq } from "../../generated/event_store/protocols/v1/persistentsubscriptions_pb";
 
 import type { BaseOptions } from "../types";
 import {

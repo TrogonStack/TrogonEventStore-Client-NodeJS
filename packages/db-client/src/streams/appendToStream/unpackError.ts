@@ -1,4 +1,4 @@
-import type { Status } from "../../../generated/kurrentdb/protocols/v1/status_pb";
+import type { Status } from "../../../generated/event_store/protocols/v1/status_pb";
 import {
   AccessDenied,
   MaximumAppendSizeExceeded,
@@ -6,7 +6,7 @@ import {
   Timeout,
   Unknown,
   WrongExpectedVersion,
-} from "../../../generated/kurrentdb/protocols/v1/shared_pb";
+} from "../../../generated/event_store/protocols/v1/shared_pb";
 
 import {
   AccessDeniedError,

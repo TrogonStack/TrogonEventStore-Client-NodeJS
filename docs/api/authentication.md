@@ -3,7 +3,7 @@ title: Authentication
 order: 7
 ---
 
-# Client x.509 certificate 
+# Client x.509 certificate
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
@@ -11,7 +11,7 @@ X.509 certificates are digital certificates that use the X.509 public key infras
 
 ## Prerequisites
 
-1. KurrentDB 25.0 or greater, or EventStoreDB 24.10 or later.
+1. A TrogonEventStore server with user certificate authentication enabled.
 2. A valid X.509 certificate configured on the Database. See [configuration steps](@server/security/user-authentication.html#user-x-509-certificates) for more details.
 
 ## Connect using an x.509 certificate
@@ -32,6 +32,6 @@ The client supports the following parameters:
 To authenticate, include these two parameters in your connection string or constructor when initializing the client:
 
 ```ts
-const connectionString = `kurrentdb://admin:changeit@{endpoint}?tls=true&userCertFile={pathToCaFile}&userKeyFile={pathToKeyFile}`;
-const client = KurrentDBClient.connectionString(connectionString);
+const connectionString = `esdb://admin:changeit@{endpoint}?tls=true&userCertFile={pathToCaFile}&userKeyFile={pathToKeyFile}`;
+const client = TrogonEventStoreClient.connectionString(connectionString);
 ```

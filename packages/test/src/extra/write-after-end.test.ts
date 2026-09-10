@@ -3,10 +3,10 @@
 import { createTestNode, delay, jsonTestEvents } from "@test-utils";
 import {
   EventData,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   UnavailableError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 // These tests can take time.
 jest.setTimeout(120_000);
@@ -35,13 +35,15 @@ Array.isArray = (arg): arg is never[] => {
 
 describe.skip("write after end", () => {
   test("Should not write after end", async () => {
-    // We are going to do a huge append, so tell KurrentDB not to reject it
+    // We are going to do a huge append, so tell TrogonEventStore not to reject it
     const node = createTestNode()
       .setOption("EVENTSTORE_MAX_APPEND_SIZE", 10_000_000)
       .setOption("EVENTSTORE_MAX_APPEND_EVENT_SIZE", 10_000_000);
     await node.up();
 
-    const client = KurrentDBClient.connectionString(node.connectionString());
+    const client = TrogonEventStoreClient.connectionString(
+      node.connectionString()
+    );
 
     const STREAM_NAME = "json_stream_name";
     await client.appendToStream(STREAM_NAME, jsonTestEvents(), {
@@ -72,13 +74,15 @@ describe.skip("write after end", () => {
   });
 
   test("Should not write after end (batch append)", async () => {
-    // We are going to do a huge append, so tell KurrentDB not to reject it
+    // We are going to do a huge append, so tell TrogonEventStore not to reject it
     const node = createTestNode()
       .setOption("EVENTSTORE_MAX_APPEND_SIZE", 10_000_000)
       .setOption("EVENTSTORE_MAX_APPEND_EVENT_SIZE", 10_000_000);
     await node.up();
 
-    const client = KurrentDBClient.connectionString(node.connectionString());
+    const client = TrogonEventStoreClient.connectionString(
+      node.connectionString()
+    );
 
     const STREAM_NAME = "json_stream_name";
     await client.appendToStream(STREAM_NAME, jsonTestEvents());
@@ -108,7 +112,9 @@ describe.skip("write after end", () => {
     const node = createTestNode();
     await node.up();
 
-    const client = KurrentDBClient.connectionString(node.connectionString());
+    const client = TrogonEventStoreClient.connectionString(
+      node.connectionString()
+    );
 
     const STREAM_NAME = "json_stream_name";
     await client.appendToStream(STREAM_NAME, jsonTestEvents());

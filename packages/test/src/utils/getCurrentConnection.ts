@@ -1,7 +1,10 @@
-import type { KurrentDBClient, EndPoint } from "@kurrent/kurrentdb-client";
+import type {
+  TrogonEventStoreClient,
+  EndPoint,
+} from "@trogonstack/trogon-eventstore-client";
 
 export const getCurrentConnection = async (
-  client: KurrentDBClient
+  client: TrogonEventStoreClient
 ): Promise<EndPoint> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const channel = await (client as any).getChannel();

@@ -11,24 +11,24 @@ import {
 import {
   AccessDeniedError,
   END,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   PersistentSubscriptionDoesNotExistError,
   persistentSubscriptionToAllSettingsFromDefaults,
   Position,
   ROUND_ROBIN,
   START,
   UnsupportedError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("getPersistentSubscriptionToAllInfo", () => {
   const supported = matchServerVersion`>=21.10.1`;
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
 
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

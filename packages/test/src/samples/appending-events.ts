@@ -3,21 +3,21 @@ import {
   NO_STREAM,
   START,
   FORWARDS,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   JSONEventType,
   AppendStreamState,
   WrongExpectedVersionError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 import { createTestNode } from "@test-utils";
 import { randomUUID as uuid } from "crypto";
 
 describe("[sample] appending-events", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

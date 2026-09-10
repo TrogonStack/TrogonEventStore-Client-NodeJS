@@ -1,16 +1,16 @@
-import type * as kdb from "@kurrent/kurrentdb-client";
+import type * as trogonEventStore from "@trogonstack/trogon-eventstore-client";
 
 export type SubscribeToStreamParameters = Parameters<
-  kdb.KurrentDBClient["subscribeToStream"]
+  trogonEventStore.TrogonEventStoreClient["subscribeToStream"]
 >;
 export type SubscribeToAllParameters = Parameters<
-  kdb.KurrentDBClient["subscribeToAll"]
+  trogonEventStore.TrogonEventStoreClient["subscribeToAll"]
 >;
 export type PersistentSubscribeToAllParameters = Parameters<
-  kdb.KurrentDBClient["subscribeToPersistentSubscriptionToAll"]
+  trogonEventStore.TrogonEventStoreClient["subscribeToPersistentSubscriptionToAll"]
 >;
 export type PersistentSubscribeToStreamParameters = Parameters<
-  kdb.KurrentDBClient["subscribeToPersistentSubscriptionToStream"]
+  trogonEventStore.TrogonEventStoreClient["subscribeToPersistentSubscriptionToStream"]
 >;
 
 export type SubscribeParameters =
@@ -21,13 +21,5 @@ export type PersistentSubscribeParameters =
   | PersistentSubscribeToAllParameters;
 
 export type AppendToStreamParams = Parameters<
-  kdb.KurrentDBClient["appendToStream"]
->;
-
-export type MultiStreamAppendParams = Parameters<
-  kdb.KurrentDBClient["multiStreamAppend"]
->;
-
-export type AppendRecordsParams = Parameters<
-  kdb.KurrentDBClient["appendRecords"]
+  trogonEventStore.TrogonEventStoreClient["appendToStream"]
 >;

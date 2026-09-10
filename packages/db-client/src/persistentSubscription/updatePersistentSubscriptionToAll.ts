@@ -1,9 +1,9 @@
-import { Empty } from "../../generated/kurrentdb/protocols/v1/shared_pb";
-import { UpdateReq } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_pb";
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
+import { UpdateReq } from "../../generated/event_store/protocols/v1/persistentsubscriptions_pb";
 import {
   PersistentSubscriptionsClient,
   PersistentSubscriptionsService,
-} from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_grpc_pb";
+} from "../../generated/event_store/protocols/v1/persistentsubscriptions_grpc_pb";
 
 import { debug, convertToCommandError, UnsupportedError } from "../utils";
 import { END, START } from "../constants";

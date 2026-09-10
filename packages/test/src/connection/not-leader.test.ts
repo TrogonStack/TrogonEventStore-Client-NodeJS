@@ -4,10 +4,10 @@ import {
   FOLLOWER,
   ErrorType,
   NotLeaderError,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   BACKWARDS,
   END,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("not-leader", () => {
   const cluster = createTestCluster();
@@ -23,7 +23,7 @@ describe("not-leader", () => {
   });
 
   test("should get an error here", async () => {
-    const followerClient = KurrentDBClient.connectionString(
+    const followerClient = TrogonEventStoreClient.connectionString(
       cluster.connectionStringWithOverrides({
         nodePreference: FOLLOWER,
       })
@@ -36,7 +36,7 @@ describe("not-leader", () => {
 
     expect(appendResult).toBeDefined();
 
-    const readFromTestStream = async (client: KurrentDBClient) => {
+    const readFromTestStream = async (client: TrogonEventStoreClient) => {
       return collect(
         client.readStream(STREAM_NAME, {
           maxCount: 10,
@@ -59,7 +59,7 @@ describe("not-leader", () => {
         expect(error.leader).toBeDefined();
         expect(cluster.endpoints).toContainEqual(error.leader);
 
-        const leaderClient = KurrentDBClient.connectionString(
+        const leaderClient = TrogonEventStoreClient.connectionString(
           cluster.connectionStringWithOverrides({
             endpoints: [error.leader],
           })

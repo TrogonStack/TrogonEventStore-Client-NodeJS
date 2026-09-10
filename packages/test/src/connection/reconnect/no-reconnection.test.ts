@@ -1,11 +1,11 @@
 import { createTestCluster, createTestNode, jsonTestEvents } from "@test-utils";
 import {
   jsonEvent,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   StreamNotFoundError,
   TimeoutError,
   WrongExpectedVersionError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 // This test can take time.
 jest.setTimeout(120_000);
@@ -16,7 +16,7 @@ describe("reconnect", () => {
 
     await cluster.up();
 
-    const client = KurrentDBClient.connectionString(
+    const client = TrogonEventStoreClient.connectionString(
       cluster.connectionStringWithOverrides({
         defaultDeadline: 100_000_000,
       })
@@ -67,7 +67,7 @@ describe("reconnect", () => {
     };
     const STREAM_NAME = "try_get_timeout";
 
-    const client = KurrentDBClient.connectionString(
+    const client = TrogonEventStoreClient.connectionString(
       timeoutNode.connectionStringWithOverrides({
         defaultDeadline: 100_000_000,
       })

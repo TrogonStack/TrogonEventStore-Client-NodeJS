@@ -1,7 +1,7 @@
-const kdbImage = ((): string => {
+const serverImage = ((): string => {
   const image =
-    process.env.KURRENT_IMAGE ??
-    "docker.eventstore.com/kurrent-staging/kurrentdb:ci";
+    process.env.TROGON_EVENTSTORE_IMAGE ??
+    "ghcr.io/trogonstack/trogoneventstore:ci";
 
   return image;
 })();
@@ -9,5 +9,5 @@ const kdbImage = ((): string => {
 export const dockerImages = {
   volumesProvisioner: "hasnat/volumes-provisioner",
   certGen: "docker.eventstore.com/eventstore-utils/es-gencert-cli:latest",
-  kdb: kdbImage,
+  server: serverImage,
 };

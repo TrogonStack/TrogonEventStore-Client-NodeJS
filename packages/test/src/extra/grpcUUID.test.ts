@@ -1,8 +1,8 @@
 import {
   parseUUID,
   structuredUUIDToString,
-} from "@kurrent/kurrentdb-client/dist/utils/grpcUUID";
-import { UUID } from "@kurrent/kurrentdb-client/generated/kurrentdb/protocols/v1/shared_pb";
+} from "@trogonstack/trogon-eventstore-client/dist/utils/grpcUUID";
+import { UUID } from "@trogonstack/trogon-eventstore-client/generated/event_store/protocols/v1/shared_pb";
 
 const makeStructured = (msb: string, lsb: string): UUID.Structured => {
   const s = new UUID.Structured();

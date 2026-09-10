@@ -1,8 +1,8 @@
-import { GetInfoReq } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_pb";
+import { GetInfoReq } from "../../generated/event_store/protocols/v1/persistentsubscriptions_pb";
 import {
   PersistentSubscriptionsClient,
   PersistentSubscriptionsService,
-} from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_grpc_pb";
+} from "../../generated/event_store/protocols/v1/persistentsubscriptions_grpc_pb";
 
 import {
   convertToCommandError,

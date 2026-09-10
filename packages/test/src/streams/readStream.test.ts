@@ -19,19 +19,19 @@ import {
   LinkEvent,
   AppendResult,
   InvalidArgumentError,
-  KurrentDBClient,
-} from "@kurrent/kurrentdb-client";
+  TrogonEventStoreClient,
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("readStream", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
   let appendResult: AppendResult;
   const STREAM_NAME = "test_stream_name";
   const OUT_OF_STREAM_NAME = "out_of_stream_name";
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
 
     appendResult = await client.appendToStream(STREAM_NAME, [
       ...jsonTestEvents(4, "json-test"),

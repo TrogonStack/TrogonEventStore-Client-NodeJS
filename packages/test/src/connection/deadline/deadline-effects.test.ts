@@ -1,8 +1,8 @@
 import { createTestCluster, jsonTestEvents } from "@test-utils";
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   DeadlineExceededError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("deadline", () => {
   const cluster = createTestCluster();
@@ -20,7 +20,7 @@ describe("deadline", () => {
       [
         "client settings",
         () =>
-          KurrentDBClient.connectionString(
+          TrogonEventStoreClient.connectionString(
             cluster.connectionStringWithOverrides({
               defaultDeadline: 1,
             })
@@ -29,7 +29,7 @@ describe("deadline", () => {
       [
         "call options",
         () =>
-          KurrentDBClient.connectionString(
+          TrogonEventStoreClient.connectionString(
             cluster.connectionString()
           ).listProjections({
             deadline: 1,
@@ -38,7 +38,7 @@ describe("deadline", () => {
       [
         "call options override",
         () =>
-          KurrentDBClient.connectionString(
+          TrogonEventStoreClient.connectionString(
             cluster.connectionStringWithOverrides({
               defaultDeadline: 200_000,
             })
@@ -49,7 +49,7 @@ describe("deadline", () => {
       [
         "append",
         () =>
-          KurrentDBClient.connectionString(
+          TrogonEventStoreClient.connectionString(
             cluster.connectionStringWithOverrides({
               defaultDeadline: 200_000,
             })

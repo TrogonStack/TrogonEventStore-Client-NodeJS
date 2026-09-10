@@ -1,10 +1,10 @@
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   PersistentSubscriptionToStreamSettings,
   persistentSubscriptionToStreamSettingsFromDefaults,
   PersistentSubscriptionToAllSettings,
   persistentSubscriptionToAllSettingsFromDefaults,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 export type CreatedPS = [
   streamName: string,
@@ -13,7 +13,7 @@ export type CreatedPS = [
 ];
 
 export const createManyPs =
-  (client: KurrentDBClient) =>
+  (client: TrogonEventStoreClient) =>
   async (
     streamName: (i: number) => string,
     groupName: (i: number) => string,
@@ -43,7 +43,7 @@ export type CreatedPSToAll = [
 ];
 
 export const createManyPsToAll =
-  (client: KurrentDBClient) =>
+  (client: TrogonEventStoreClient) =>
   async (
     groupName: (i: number) => string,
     settingsChanges: Partial<PersistentSubscriptionToAllSettings>[]

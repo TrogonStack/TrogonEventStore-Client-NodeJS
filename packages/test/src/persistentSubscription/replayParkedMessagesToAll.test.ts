@@ -10,7 +10,7 @@ import {
 
 import {
   AccessDeniedError,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   PARK,
   PersistentSubscriptionDoesNotExistError,
@@ -18,17 +18,19 @@ import {
   START,
   streamNameFilter,
   UnsupportedError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("replayParkedMessagesToAll", () => {
   const supported = matchServerVersion`>=21.10.1`;
   const cluster = createTestCluster();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await cluster.up();
 
-    client = KurrentDBClient.connectionString(cluster.connectionString());
+    client = TrogonEventStoreClient.connectionString(
+      cluster.connectionString()
+    );
   });
 
   afterAll(async () => {

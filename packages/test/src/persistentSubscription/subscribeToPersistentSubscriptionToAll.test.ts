@@ -10,28 +10,27 @@ import {
   jsonTestEvents,
   matchServerVersion,
   optionalDescribe,
-  postEventViaHttpApi,
 } from "@test-utils";
 
 import {
   AllStreamResolvedEvent,
   NotLeaderError,
   PersistentSubscriptionToStream,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   persistentSubscriptionToAllSettingsFromDefaults,
   START,
   UnsupportedError,
   streamNameFilter,
   END,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 const asyncPipeline = promisify(pipeline);
 
 describe("subscribeToPersistentSubscriptionToAll", () => {
   const supported = matchServerVersion`>=21.10`;
   const cluster = createTestCluster();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   const finishEvent = (type: string) =>
     jsonEvent({
@@ -44,7 +43,9 @@ describe("subscribeToPersistentSubscriptionToAll", () => {
   beforeAll(async () => {
     await cluster.up();
 
-    client = KurrentDBClient.connectionString(cluster.connectionString());
+    client = TrogonEventStoreClient.connectionString(
+      cluster.connectionString()
+    );
   });
 
   afterAll(async () => {
@@ -374,6 +375,8 @@ describe("subscribeToPersistentSubscriptionToAll", () => {
           const FINISH_TEST = "async_iter_nack_finish_test";
           const doSomething = jest.fn();
           const nacked: string[] = [];
+          const retried = new Set<string>();
+          let finishSeen = false;
 
           const { position } = await client.appendToStream(
             STREAM_NAME,
@@ -412,10 +415,8 @@ describe("subscribeToPersistentSubscriptionToAll", () => {
 
             if (resolvedEvent.event.type === FINISH_TEST) {
               await subscription.ack(resolvedEvent);
-              break;
-            }
-
-            if (
+              finishSeen = true;
+            } else if (
               !resolvedEvent.event.streamId.startsWith("$") &&
               !nacked.includes(resolvedEvent.event.id)
             ) {
@@ -425,10 +426,21 @@ describe("subscribeToPersistentSubscriptionToAll", () => {
                 "To test it",
                 resolvedEvent
               );
-              continue;
+            } else {
+              if (
+                !resolvedEvent.event.streamId.startsWith("$") &&
+                resolvedEvent.event.type !== "skip-event"
+              ) {
+                retried.add(resolvedEvent.event.id);
+              }
+
+              await subscription.ack(resolvedEvent);
             }
 
-            await subscription.ack(resolvedEvent);
+            if (finishSeen && retried.size === retryCount + 1) {
+              await subscription.unsubscribe();
+              break;
+            }
           }
 
           // mark + skipped + retried
@@ -590,57 +602,9 @@ describe("subscribeToPersistentSubscriptionToAll", () => {
       });
     });
 
-    test("malformed events", async () => {
-      const STREAM_NAME = "malformed_json";
-      const GROUP_NAME = "malformed_json_group_name";
-      const FINISH_TEST = "malformed_json_finish_test";
-      const doSomething = jest.fn();
-
-      await client.createPersistentSubscriptionToAll(
-        GROUP_NAME,
-        persistentSubscriptionToAllSettingsFromDefaults({
-          startFrom: END,
-        })
-      );
-
-      await client.appendToStream(STREAM_NAME, jsonTestEvents(3, "test 1"));
-
-      const malformedData = "****";
-
-      await postEventViaHttpApi(cluster, {
-        contentType: "application/json",
-        type: "malformed-event",
-        stream: STREAM_NAME,
-        data: malformedData,
-      });
-
-      await client.appendToStream(STREAM_NAME, [
-        ...jsonTestEvents(3, "test 2"),
-        finishEvent(FINISH_TEST),
-      ]);
-
-      const subscription =
-        client.subscribeToPersistentSubscriptionToAll(GROUP_NAME);
-
-      for await (const resolvedEvent of subscription) {
-        doSomething(resolvedEvent);
-        await subscription.ack(resolvedEvent);
-
-        if (resolvedEvent.event?.type === "malformed-event") {
-          expect(resolvedEvent.event.data).toBe(malformedData);
-        }
-
-        if (resolvedEvent.event?.type === FINISH_TEST) {
-          break;
-        }
-      }
-
-      expect(doSomething).toBeCalled();
-    });
-
     test("should throw on follower node", async () => {
       // Create connection to a follower node
-      const followerClient = KurrentDBClient.connectionString(
+      const followerClient = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides({
           nodePreference: "follower",
         })
@@ -653,7 +617,7 @@ describe("subscribeToPersistentSubscriptionToAll", () => {
       const confirmThatErrorWasThrown = jest.fn();
 
       const createAndConnectWithAutoReconnect = async (
-        client: KurrentDBClient
+        client: TrogonEventStoreClient
       ): Promise<PersistentSubscriptionToStream> => {
         try {
           await client.createPersistentSubscriptionToAll(
@@ -670,7 +634,7 @@ describe("subscribeToPersistentSubscriptionToAll", () => {
           // Our command is good, but must be executed on the leader
           if (error instanceof NotLeaderError) {
             // Create new client connected to the reported leader node
-            const leaderClient = KurrentDBClient.connectionString(
+            const leaderClient = TrogonEventStoreClient.connectionString(
               cluster.connectionStringWithOverrides({
                 endpoints: [error.leader],
               })

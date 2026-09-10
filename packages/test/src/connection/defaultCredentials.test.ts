@@ -1,9 +1,9 @@
 import { collect, createTestNode, jsonTestEvents } from "@test-utils";
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   AccessDeniedError,
   type BasicCredentials,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 const adminBasic: BasicCredentials = {
   username: "admin",
@@ -28,7 +28,9 @@ describe("defaultCredentials", () => {
 
   describe("should set default credentials to be used by commands", () => {
     test("bad override", async () => {
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
       await expect(
         collect(client.readAll({ maxCount: 10 }))
       ).resolves.toBeDefined();
@@ -45,7 +47,7 @@ describe("defaultCredentials", () => {
     });
 
     test("good override", async () => {
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         node.connectionStringWithOverrides({
           defaultUserCredentials: {
             username: "AzureDiamond",
@@ -72,7 +74,9 @@ describe("defaultCredentials", () => {
 
   describe("bearer-token credentials", () => {
     test("unknown token rejected with AccessDenied", async () => {
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       await expect(
         client.appendToStream("bearer-rejected-stream", jsonTestEvents(1), {
@@ -84,7 +88,9 @@ describe("defaultCredentials", () => {
 
   describe("credentialsProvider", () => {
     test("returns fresh credentials per RPC", async () => {
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       const provider = jest
         .fn<BasicCredentials, []>()
@@ -108,7 +114,9 @@ describe("defaultCredentials", () => {
     });
 
     test("per-call credentials override the provider", async () => {
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       let calls = 0;
       client.setCredentialsProvider(() => {
@@ -125,7 +133,9 @@ describe("defaultCredentials", () => {
     });
 
     test("bearer token reaches bridge-backed readAll", async () => {
-      const client = KurrentDBClient.connectionString(node.connectionString());
+      const client = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
 
       let calls = 0;
       client.setCredentialsProvider(() => {

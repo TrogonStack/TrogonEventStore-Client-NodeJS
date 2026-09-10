@@ -1,8 +1,8 @@
 import { createServer, Server } from "https";
 import { AddressInfo } from "net";
 
-import { HTTP } from "@kurrent/kurrentdb-client/dist/Client/http";
-import type { Client } from "@kurrent/kurrentdb-client/dist/Client";
+import { HTTP } from "@trogonstack/trogon-eventstore-client/dist/Client/http";
+import type { Client } from "@trogonstack/trogon-eventstore-client/dist/Client";
 
 const CERT = `-----BEGIN CERTIFICATE-----
 MIIDJzCCAg+gAwIBAgIUackXrpevDI9m1Tvn+Vp24oZICEkwDQYJKoZIhvcNAQEL

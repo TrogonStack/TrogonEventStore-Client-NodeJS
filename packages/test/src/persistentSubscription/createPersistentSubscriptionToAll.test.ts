@@ -8,7 +8,7 @@ import {
 
 import {
   END,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   excludeSystemEvents,
   PersistentSubscriptionExistsError,
   persistentSubscriptionToAllSettingsFromDefaults,
@@ -18,17 +18,17 @@ import {
   ROUND_ROBIN,
   PINNED,
   DISPATCH_TO_SINGLE,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("createPersistentSubscriptionToAll", () => {
   const supported = matchServerVersion`>=21.10`;
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
 
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

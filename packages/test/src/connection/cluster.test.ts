@@ -1,5 +1,8 @@
 import { collect, ConnectionFeatures, createTestCluster } from "@test-utils";
-import { jsonEvent, KurrentDBClient } from "@kurrent/kurrentdb-client";
+import {
+  jsonEvent,
+  TrogonEventStoreClient,
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("cluster", () => {
   const cluster = createTestCluster();
@@ -15,7 +18,9 @@ describe("cluster", () => {
   });
 
   test("should successfully connect", async () => {
-    const client = KurrentDBClient.connectionString(cluster.connectionString());
+    const client = TrogonEventStoreClient.connectionString(
+      cluster.connectionString()
+    );
 
     const appendResult = await client.appendToStream(STREAM_NAME, event);
     const readResult = collect(
@@ -28,7 +33,7 @@ describe("cluster", () => {
 
   test("maxDiscoverAttempts", async () => {
     const maxDiscoverAttempts = 3;
-    const client = KurrentDBClient.connectionString(
+    const client = TrogonEventStoreClient.connectionString(
       cluster.connectionStringWithOverrides({
         endpoints: [
           { address: "localhost", port: 8888 },
@@ -60,7 +65,7 @@ describe("cluster", () => {
     };
 
     const client1DiscoveryInterval = overrides.discoveryInterval!;
-    const client1 = KurrentDBClient.connectionString(
+    const client1 = TrogonEventStoreClient.connectionString(
       cluster.connectionStringWithOverrides(overrides)
     );
     const client1Start = Date.now();
@@ -74,7 +79,7 @@ describe("cluster", () => {
 
     overrides.discoveryInterval = 5_000;
     const client2Start = Date.now();
-    const client2 = KurrentDBClient.connectionString(
+    const client2 = TrogonEventStoreClient.connectionString(
       cluster.connectionStringWithOverrides(overrides)
     );
     await expect(

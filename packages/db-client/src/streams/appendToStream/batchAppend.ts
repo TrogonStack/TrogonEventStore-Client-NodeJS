@@ -1,15 +1,15 @@
 import { randomUUID } from "crypto";
 import { Timestamp } from "google-protobuf/google/protobuf/timestamp_pb";
 
-import { StreamsClient } from "../../../generated/kurrentdb/protocols/v1/streams_grpc_pb";
+import { StreamsClient } from "../../../generated/event_store/protocols/v1/streams_grpc_pb";
 import {
   BatchAppendReq,
   BatchAppendResp,
-} from "../../../generated/kurrentdb/protocols/v1/streams_pb";
+} from "../../../generated/event_store/protocols/v1/streams_pb";
 import {
   Empty,
   UUID,
-} from "../../../generated/kurrentdb/protocols/v1/shared_pb";
+} from "../../../generated/event_store/protocols/v1/shared_pb";
 
 import type { Client } from "../../Client";
 import type { AppendResult, EventData } from "../../types";

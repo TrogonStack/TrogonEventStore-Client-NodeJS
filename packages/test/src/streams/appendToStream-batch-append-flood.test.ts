@@ -4,17 +4,20 @@ import {
   matchServerVersion,
   optionalDescribe,
 } from "@test-utils";
-import { KurrentDBClient, jsonEvent } from "@kurrent/kurrentdb-client";
+import {
+  TrogonEventStoreClient,
+  jsonEvent,
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("appendToStream - batch append - flood", () => {
   const supported = matchServerVersion`>=21.10`;
 
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

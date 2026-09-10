@@ -1,6 +1,6 @@
-import { ProjectionsClient } from "../../generated/kurrentdb/protocols/v1/projectionmanagement_grpc_pb";
-import { UpdateReq } from "../../generated/kurrentdb/protocols/v1/projectionmanagement_pb";
-import { Empty } from "../../generated/kurrentdb/protocols/v1/shared_pb";
+import { ProjectionsClient } from "../../generated/event_store/protocols/v1/projectionmanagement_grpc_pb";
+import { UpdateReq } from "../../generated/event_store/protocols/v1/projectionmanagement_pb";
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
 
 import { Client } from "../Client";
 import type { BaseOptions } from "../types";

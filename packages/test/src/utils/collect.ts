@@ -1,6 +1,6 @@
 export const collect = async <
-  T extends AsyncIterableIterator<unknown>,
-  E = T extends AsyncIterableIterator<infer E> ? E : unknown
+  T extends AsyncIterable<unknown>,
+  E = T extends AsyncIterable<infer E> ? E : unknown
 >(
   stream: T
 ): Promise<E[]> => {

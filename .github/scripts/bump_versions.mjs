@@ -23,7 +23,7 @@ async function main() {
     const packages = JSON.parse((await exec('pnpm ls -r --only-projects --json')).stdout);
 
     for (let {name, path, version, private: isPrivate} of packages) {
-        if (isPrivate && name !== 'kurrent-node-client-repository') continue;
+        if (isPrivate && name !== 'trogon-eventstore-client-nodejs') continue;
         await updatePackageVersion(path, version, releaseType);
     }
 }

@@ -1,5 +1,5 @@
 import { Channel } from "@grpc/grpc-js";
-import { KurrentDBClient } from "@kurrent/kurrentdb-client";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client";
 
 jest.mock("@grpc/grpc-js/build/src/channel.js");
 const ChannelMock = Channel as jest.Mock<Channel>;
@@ -15,7 +15,7 @@ describe("keepAlive settings", () => {
     describe.each([
       [
         "keepAliveInterval should default to 10_000",
-        "kurrentdb://host",
+        "esdb://host",
         {},
         {
           "grpc.keepalive_time_ms": 10000,
@@ -23,7 +23,7 @@ describe("keepAlive settings", () => {
       ],
       [
         "keepAliveTimeout should default to 10_000",
-        "kurrentdb://host",
+        "esdb://host",
         {},
         {
           "grpc.keepalive_timeout_ms": 10000,
@@ -31,7 +31,7 @@ describe("keepAlive settings", () => {
       ],
       [
         "keepAliveInterval should be settable (leaving timeout as default)",
-        "kurrentdb://host?keepAliveInterval=123456",
+        "esdb://host?keepAliveInterval=123456",
         { keepAliveInterval: 123456 },
         {
           "grpc.keepalive_time_ms": 123456,
@@ -40,7 +40,7 @@ describe("keepAlive settings", () => {
       ],
       [
         "keepAliveTimeout should be settable (leaving interval as default)",
-        "kurrentdb://host?keepAliveTimeout=246810",
+        "esdb://host?keepAliveTimeout=246810",
         { keepAliveTimeout: 246810 },
         {
           "grpc.keepalive_time_ms": 10000,
@@ -49,7 +49,7 @@ describe("keepAlive settings", () => {
       ],
       [
         "both should be settable",
-        "kurrentdb://host?keepAliveInterval=9987654&keepAliveTimeout=124816",
+        "esdb://host?keepAliveInterval=9987654&keepAliveTimeout=124816",
         { keepAliveInterval: 9987654, keepAliveTimeout: 124816 },
         {
           "grpc.keepalive_time_ms": 9987654,
@@ -58,7 +58,7 @@ describe("keepAlive settings", () => {
       ],
       [
         "-1 should disable (max_int) keepAliveInterval (leaving timeout as default)",
-        "kurrentdb://host?keepAliveInterval=-1",
+        "esdb://host?keepAliveInterval=-1",
         { keepAliveInterval: -1 },
         {
           "grpc.keepalive_time_ms": Number.MAX_VALUE,
@@ -67,7 +67,7 @@ describe("keepAlive settings", () => {
       ],
       [
         "-1 should disable (max_int) keepAliveTimeout (leaving interval as default)",
-        "kurrentdb://host?keepAliveTimeout=-1",
+        "esdb://host?keepAliveTimeout=-1",
         { keepAliveTimeout: -1 },
         {
           "grpc.keepalive_time_ms": 10000,
@@ -76,7 +76,7 @@ describe("keepAlive settings", () => {
       ],
       [
         "-1 should disable (max_int) both",
-        "kurrentdb://host?keepAliveTimeout=-1&keepAliveInterval=-1",
+        "esdb://host?keepAliveTimeout=-1&keepAliveInterval=-1",
         { keepAliveTimeout: -1, keepAliveInterval: -1 },
         {
           "grpc.keepalive_time_ms": Number.MAX_VALUE,
@@ -85,7 +85,7 @@ describe("keepAlive settings", () => {
       ],
       [
         "0 is fine (but a terrible choice)",
-        "kurrentdb://host?keepAliveTimeout=0&keepAliveInterval=0",
+        "esdb://host?keepAliveTimeout=0&keepAliveInterval=0",
         { keepAliveTimeout: 0, keepAliveInterval: 0 },
         {
           "grpc.keepalive_time_ms": 0,
@@ -96,7 +96,7 @@ describe("keepAlive settings", () => {
       test.each([
         [
           "connectionString",
-          () => KurrentDBClient.connectionString(connectionString),
+          () => TrogonEventStoreClient.connectionString(connectionString),
         ],
       ])("%s", async (_, createClient) => {
         const warnSpy = jest.spyOn(console, "warn").mockImplementation();
@@ -126,7 +126,7 @@ describe("keepAlive settings", () => {
         [
           "connectionString",
           (option: string, value: number) =>
-            KurrentDBClient.connectionString`kurrentdb://host?${option}=${value}`,
+            TrogonEventStoreClient.connectionString`esdb://host?${option}=${value}`,
         ],
       ])("%s", (_, testCase) => {
         expect(() => testCase(option, value)).toThrowErrorMatchingSnapshot();
@@ -139,7 +139,7 @@ describe("keepAlive settings", () => {
       [
         "connectionString",
         (value: number) =>
-          KurrentDBClient.connectionString`kurrentdb://host?keepAliveInterval=${value}`,
+          TrogonEventStoreClient.connectionString`esdb://host?keepAliveInterval=${value}`,
       ],
     ])("%s", (_, testCase) => {
       for (const keepAliveInterval of [0, 1, 10, 1000, 9999]) {

@@ -1,6 +1,6 @@
 import { Cluster, collect, delay, jsonTestEvents } from "@test-utils";
 
-import { KurrentDBClient } from "@kurrent/kurrentdb-client";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client";
 
 interface ConnectionStringTestsOptions {
   title: string;
@@ -32,7 +32,7 @@ export const connectionStringTests = ({
       const STREAM_NAME = `${streamPrefix}_template_string_stream`;
       const uri = createUri(server);
       const query = createQueryString(server);
-      const client = KurrentDBClient.connectionString`esdb://admin:changeit@${uri}?${query}`;
+      const client = TrogonEventStoreClient.connectionString`esdb://admin:changeit@${uri}?${query}`;
 
       const appendResult = await client.appendToStream(
         STREAM_NAME,
@@ -53,7 +53,7 @@ export const connectionStringTests = ({
       const STREAM_NAME = `${streamPrefix}_string_stream`;
       const uri = createUri(server);
       const query = createQueryString(server);
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         `esdb://admin:changeit@${uri}?${query}`
       );
 
@@ -75,7 +75,7 @@ export const connectionStringTests = ({
     test("default credentials", async () => {
       const uri = createUri(server);
       const query = createQueryString(server);
-      const client = KurrentDBClient.connectionString`esdb://admin:changeit@${uri}?${query}`;
+      const client = TrogonEventStoreClient.connectionString`esdb://admin:changeit@${uri}?${query}`;
       await expect(
         collect(client.readAll({ maxCount: 10 }))
       ).resolves.toBeDefined();

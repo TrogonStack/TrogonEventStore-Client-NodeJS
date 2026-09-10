@@ -2,18 +2,18 @@ import { createTestNode } from "@test-utils";
 
 import {
   PINNED,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   persistentSubscriptionToStreamSettingsFromDefaults,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("updatePersistentSubscriptionToStream", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
 
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

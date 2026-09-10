@@ -5,7 +5,7 @@ title: Projections
 
 # Projection management
 
-The client provides a way to manage projections in KurrentDB. 
+The client provides a way to manage projections in TrogonEventStore.
 
 For a detailed explanation of projections, see the [server documentation](@server/features/projections/README.md).
 
@@ -199,7 +199,7 @@ See the [projection details](#projection-details) section for an explanation of 
 
 ::: note
 This is currently not available in the nodejs client
-::: 
+:::
 
 ## List continuous projections
 

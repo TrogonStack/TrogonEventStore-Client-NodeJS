@@ -2,7 +2,10 @@
 
 import { randomUUID as uuid } from "crypto";
 
-import { KurrentDBClient, isCommandError } from "@kurrent/kurrentdb-client";
+import {
+  TrogonEventStoreClient,
+  isCommandError,
+} from "@trogonstack/trogon-eventstore-client";
 import {
   createTestNode,
   delay,
@@ -20,7 +23,7 @@ optionalDescribe(matchServerVersion`<=23.10`)(
     const node = createTestNode();
     const log = console.log;
 
-    let client!: KurrentDBClient;
+    let client!: TrogonEventStoreClient;
 
     const createTestProjection = async (
       name: string = uuid(),
@@ -39,7 +42,7 @@ optionalDescribe(matchServerVersion`<=23.10`)(
     beforeAll(async () => {
       await node.up();
 
-      client = KurrentDBClient.connectionString(node.connectionString());
+      client = TrogonEventStoreClient.connectionString(node.connectionString());
 
       await client.appendToStream("some-stream", jsonTestEvents());
       console.log = jest.fn(log);
@@ -60,7 +63,7 @@ optionalDescribe(matchServerVersion`<=23.10`)(
       const PASSWORD = "changeit";
 
       // region createClient
-      const client = KurrentDBClient.connectionString`
+      const client = TrogonEventStoreClient.connectionString`
         esdb+discover://${ADMIN}:${PASSWORD}@${ENDPOINT}?nodePreference=leader
     `;
       // endregion createClient
@@ -146,7 +149,6 @@ optionalDescribe(matchServerVersion`<=23.10`)(
     test("Delete", async () => {
       const name = await createTestProjection();
 
-      // before https://github.com/kurrent-io/EventStore/pull/2944
       // writeCheckpoint had to be false (abort) to stop the projection
       await client.abortProjection(name);
 
