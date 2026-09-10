@@ -14,19 +14,19 @@ import {
 import {
   AccessDeniedError,
   END,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   PersistentSubscriptionToAll,
   PINNED,
   Position,
   ROUND_ROBIN,
   START,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("listAllPersistentSubscriptions", () => {
   const psToAllSupported = matchServerVersion`>=21.10.1`;
 
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
   const created: Array<CreatedPSToAll | CreatedPS> = [];
   let psOfInterestToAll: CreatedPSToAll;
   let psOfInterestToStream: CreatedPS;
@@ -34,7 +34,7 @@ describe("listAllPersistentSubscriptions", () => {
   beforeAll(async () => {
     await node.up();
 
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
 
     if (psToAllSupported) {
       let position!: Position;
@@ -170,12 +170,14 @@ describe("listAllPersistentSubscriptions", () => {
 
   describe("errors", () => {
     const emptyNode = createTestNode();
-    let client!: KurrentDBClient;
+    let client!: TrogonEventStoreClient;
 
     beforeAll(async () => {
       await emptyNode.up();
 
-      client = KurrentDBClient.connectionString(emptyNode.connectionString());
+      client = TrogonEventStoreClient.connectionString(
+        emptyNode.connectionString()
+      );
     });
 
     afterAll(async () => {

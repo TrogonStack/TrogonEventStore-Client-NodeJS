@@ -3,7 +3,7 @@ export * from "./projections";
 export * from "./streams";
 
 export {
-  Client as KurrentDBClient,
+  Client as TrogonEventStoreClient,
   DNSClusterOptions,
   GossipClusterOptions,
   SingleNodeOptions,

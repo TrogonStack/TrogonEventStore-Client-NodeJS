@@ -1,5 +1,5 @@
-import { ProjectionsClient } from "../../generated/kurrentdb/protocols/v1/projectionmanagement_grpc_pb";
-import { DisableReq } from "../../generated/kurrentdb/protocols/v1/projectionmanagement_pb";
+import { ProjectionsClient } from "../../generated/event_store/protocols/v1/projectionmanagement_grpc_pb";
+import { DisableReq } from "../../generated/event_store/protocols/v1/projectionmanagement_pb";
 
 import { Client } from "../Client";
 import type { BaseOptions } from "../types";

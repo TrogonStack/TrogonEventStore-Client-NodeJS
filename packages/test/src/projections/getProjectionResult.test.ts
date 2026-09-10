@@ -9,19 +9,19 @@ import {
 
 import {
   RUNNING,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   NotFoundError,
   UnknownError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("getProjectionResult", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
 
     await client.enableProjection("$by_category");
   });

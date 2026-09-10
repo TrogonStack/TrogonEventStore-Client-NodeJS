@@ -1,5 +1,6 @@
-import { UpdateReq } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_pb";
-import { PersistentSubscriptionsClient } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_grpc_pb";
+import { UpdateReq } from "../../generated/event_store/protocols/v1/persistentsubscriptions_pb";
+import { PersistentSubscriptionsClient } from "../../generated/event_store/protocols/v1/persistentsubscriptions_grpc_pb";
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
 
 import { debug, convertToCommandError, createStreamIdentifier } from "../utils";
 import { END, START } from "../constants";
@@ -39,26 +40,26 @@ Client.prototype.updatePersistentSubscriptionToStream = async function (
   const options = new UpdateReq.Options();
   const identifier = createStreamIdentifier(streamName);
   const reqSettings = settingsToGRPC(settings, UpdateReq.Settings);
+  const streamOptions = new UpdateReq.StreamOptions();
 
-  // Add deprecated revision option for pre-21.10 support
+  streamOptions.setStreamIdentifier(identifier);
   switch (settings.startFrom) {
     case START: {
-      reqSettings.setRevision(BigInt(0).toString(10));
+      streamOptions.setStart(new Empty());
       break;
     }
     case END: {
-      // This is the largest possible value of UInt64
-      reqSettings.setRevision("18446744073709551615");
+      streamOptions.setEnd(new Empty());
       break;
     }
     default: {
-      reqSettings.setRevision(settings.startFrom.toString(10));
+      streamOptions.setRevision(settings.startFrom.toString(10));
       break;
     }
   }
 
   options.setGroupName(groupName);
-  options.setStreamIdentifier(identifier);
+  options.setStream(streamOptions);
   options.setSettings(reqSettings);
 
   req.setOptions(options);

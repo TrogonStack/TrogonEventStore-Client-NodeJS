@@ -8,9 +8,9 @@ import {
 } from "@test-utils";
 import {
   jsonEvent,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   CancelledError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 // This test can take time.
 jest.setTimeout(120_000);
@@ -21,7 +21,9 @@ describe.skip("reconnect", () => {
 
     await cluster.up();
 
-    const client = KurrentDBClient.connectionString(cluster.connectionString());
+    const client = TrogonEventStoreClient.connectionString(
+      cluster.connectionString()
+    );
 
     // make successful append of 2000 events to node
     const firstAppend = await client.appendToStream(

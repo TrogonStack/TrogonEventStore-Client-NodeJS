@@ -4,9 +4,9 @@
 import NodeEnvironment from "jest-environment-node";
 
 import { Cluster } from "./Cluster";
-import { KurrentDBClient } from "@kurrent/kurrentdb-client/dist/index";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client/dist/index";
 
-async function extractVersion(this: KurrentDBClient) {
+async function extractVersion(this: TrogonEventStoreClient) {
   return await this.capabilities;
 }
 
@@ -14,7 +14,9 @@ const checkCapabilities = async () => {
   const node = new Cluster(1);
   await node.up();
 
-  const client = KurrentDBClient.connectionString(node.connectionString());
+  const client = TrogonEventStoreClient.connectionString(
+    node.connectionString()
+  );
 
   const capabilities = await extractVersion.call(client);
 

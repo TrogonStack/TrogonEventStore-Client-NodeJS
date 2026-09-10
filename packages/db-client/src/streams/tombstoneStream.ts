@@ -1,6 +1,6 @@
-import { Empty } from "../../generated/kurrentdb/protocols/v1/shared_pb";
-import { StreamsClient } from "../../generated/kurrentdb/protocols/v1/streams_grpc_pb";
-import { TombstoneReq } from "../../generated/kurrentdb/protocols/v1/streams_pb";
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
+import { StreamsClient } from "../../generated/event_store/protocols/v1/streams_grpc_pb";
+import { TombstoneReq } from "../../generated/event_store/protocols/v1/streams_pb";
 
 import { Client } from "../Client";
 import { ANY, NO_STREAM } from "../constants";

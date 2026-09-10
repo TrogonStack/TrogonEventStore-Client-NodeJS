@@ -1,4 +1,4 @@
-import type { ServerFeatures } from "@kurrent/kurrentdb-client/dist/Client/ServerFeatures";
+import type { ServerFeatures } from "@trogonstack/trogon-eventstore-client/dist/Client/ServerFeatures";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -11,6 +11,13 @@ interface ServerVersion {
   month: number;
   patch: number;
 }
+
+const CURRENT_PROTOCOL_BASELINE: ServerVersion = {
+  string: "24.10.0",
+  year: 24,
+  month: 10,
+  patch: 0,
+};
 
 const parseServerVersion = (version: string): ServerVersion => {
   const match = version.match(
@@ -27,12 +34,14 @@ const parseServerVersion = (version: string): ServerVersion => {
     };
   }
 
-  return {
+  const parsed = {
     string: version,
     year: parseInt(match.groups.year, 10),
     month: parseInt(match.groups.month, 10),
     patch: parseInt(match.groups.patch, 10),
   };
+
+  return parsed.year === 0 ? CURRENT_PROTOCOL_BASELINE : parsed;
 };
 
 interface MatchVersion {

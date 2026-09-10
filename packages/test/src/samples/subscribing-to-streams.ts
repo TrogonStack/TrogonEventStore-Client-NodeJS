@@ -1,6 +1,6 @@
 import {
   START,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   END,
   ReadRevision,
   JSONEventType,
@@ -8,14 +8,14 @@ import {
   AllStreamResolvedEvent,
   streamNameFilter,
   ReadPosition,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 import { createTestNode, jsonTestEvents } from "@test-utils";
 
 describe("[sample] server-side-filtering", () => {
   const log = console.log;
   const node = createTestNode();
   const handleEvent = jest.fn();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   type SomeStreamEvents =
     | JSONEventType<"a", { a: true }>
@@ -23,7 +23,7 @@ describe("[sample] server-side-filtering", () => {
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
 
     await client.appendToStream("some-stream", jsonTestEvents());
     console.log = jest.fn();
@@ -106,7 +106,7 @@ describe("[sample] server-side-filtering", () => {
       });
     // endregion subscribe-to-stream-subscription-dropped
 
-    subscription.unsubscribe();
+    await subscription.unsubscribe();
   });
 
   test("subscribeToAll", async () => {

@@ -1,0 +1,44 @@
+name: Integration Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      server_image:
+        description: Fully qualified TrogonEventStore container image
+        required: false
+        default: ghcr.io/trogonstack/trogoneventstore:ci
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [samples, connection, extra, persistentSubscription, projections, streams, opentelemetry]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Enable Corepack
+        run: corepack enable
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build
+        run: yarn build
+      - name: Run integration tests
+        env:
+          TROGON_EVENTSTORE_IMAGE: ${{ inputs.server_image || 'ghcr.io/trogonstack/trogoneventstore:ci' }}
+        run: yarn test "./src/${{ matrix.group }}" --ci --run-in-band --forceExit

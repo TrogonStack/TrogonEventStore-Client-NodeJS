@@ -1,11 +1,11 @@
 import { createTestCluster, getCurrentConnection } from "@test-utils";
 import {
   jsonEvent,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   NotLeaderError,
   FOLLOWER,
   EndPoint,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 // This test can take time.
 jest.setTimeout(120_000);
@@ -16,7 +16,7 @@ describe("reconnect", () => {
 
     await cluster.up();
 
-    const client = KurrentDBClient.connectionString(
+    const client = TrogonEventStoreClient.connectionString(
       cluster.connectionStringWithOverrides({
         defaultDeadline: 100_000_000,
         nodePreference: "follower",

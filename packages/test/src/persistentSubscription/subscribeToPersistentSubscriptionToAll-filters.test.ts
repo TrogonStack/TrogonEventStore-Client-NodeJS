@@ -8,7 +8,7 @@ import {
 } from "@test-utils";
 
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   persistentSubscriptionToAllSettingsFromDefaults,
   START,
@@ -16,12 +16,12 @@ import {
   END,
   excludeSystemEvents,
   eventTypeFilter,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("subscribeToPersistentSubscriptionToAll (filters)", () => {
   const supported = matchServerVersion`>=21.10`;
   const cluster = createTestCluster();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   const finishEvent = (type: string) =>
     jsonEvent({
@@ -34,7 +34,9 @@ describe("subscribeToPersistentSubscriptionToAll (filters)", () => {
   beforeAll(async () => {
     await cluster.up();
 
-    client = KurrentDBClient.connectionString(cluster.connectionString());
+    client = TrogonEventStoreClient.connectionString(
+      cluster.connectionString()
+    );
   });
 
   afterAll(async () => {

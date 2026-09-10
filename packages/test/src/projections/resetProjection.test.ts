@@ -3,14 +3,14 @@
 import { createTestNode, matchServerVersion } from "@test-utils";
 
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   NotFoundError,
   UnknownError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("resetProjection", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   const projection = `
   fromAll()
@@ -25,7 +25,7 @@ describe("resetProjection", () => {
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

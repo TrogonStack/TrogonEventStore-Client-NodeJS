@@ -5,7 +5,7 @@ import type { ClientDuplexStream, ServiceError } from "@grpc/grpc-js";
 import {
   ReadReq,
   ReadResp,
-} from "../../../generated/kurrentdb/protocols/v1/persistentsubscriptions_pb";
+} from "../../../generated/event_store/protocols/v1/persistentsubscriptions_pb";
 
 import {
   convertToCommandError,

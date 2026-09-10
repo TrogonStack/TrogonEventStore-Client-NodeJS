@@ -2,19 +2,19 @@ import { createTestNode } from "@test-utils";
 import {
   binaryEvent,
   BinaryEventType,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   JSONEventType,
   persistentSubscriptionToStreamSettingsFromDefaults,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("typed events should compile", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

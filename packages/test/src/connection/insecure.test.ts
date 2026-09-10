@@ -1,5 +1,8 @@
 import { collect, createInsecureTestNode } from "@test-utils";
-import { KurrentDBClient, jsonEvent } from "@kurrent/kurrentdb-client";
+import {
+  TrogonEventStoreClient,
+  jsonEvent,
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("insecure", () => {
   const node = createInsecureTestNode();
@@ -15,7 +18,9 @@ describe("insecure", () => {
   });
 
   test("should successfully connect", async () => {
-    const client = KurrentDBClient.connectionString(node.connectionString());
+    const client = TrogonEventStoreClient.connectionString(
+      node.connectionString()
+    );
 
     const appendResult = await client.appendToStream(STREAM_NAME, event);
     const readResult = await collect(

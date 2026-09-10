@@ -13,8 +13,8 @@ const checkFor = async (dependancy: string) => {
     console.error(`
 Missing dependancy: ${dependancy}
 
-Tests require docker and docker compose V2 to run. 
-Please see https://github.com/kurrent-io/KurrentDB-Client-NodeJS#run-tests for more details.
+Tests require docker and docker compose V2 to run.
+Please see https://github.com/TrogonStack/TrogonEventStore-Client-NodeJS#run-tests for more details.
 `);
     process.exit(1);
   }

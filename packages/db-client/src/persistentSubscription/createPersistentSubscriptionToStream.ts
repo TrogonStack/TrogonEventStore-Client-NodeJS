@@ -1,11 +1,11 @@
-import { CreateReq } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_pb";
-import { PersistentSubscriptionsClient } from "../../generated/kurrentdb/protocols/v1/persistentsubscriptions_grpc_pb";
+import { CreateReq } from "../../generated/event_store/protocols/v1/persistentsubscriptions_pb";
+import { PersistentSubscriptionsClient } from "../../generated/event_store/protocols/v1/persistentsubscriptions_grpc_pb";
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
 
 import type { BaseOptions } from "../types";
 import { debug, convertToCommandError, createStreamIdentifier } from "../utils";
 import { Client } from "../Client";
-import { END, PINNED_BY_CORRELATION, ROUND_ROBIN, START } from "../constants";
-import semver from "semver";
+import { END, START } from "../constants";
 
 import { settingsToGRPC } from "./utils/settingsToGRPC";
 import type { PersistentSubscriptionToStreamSettings } from "./utils/persistentSubscriptionSettings";
@@ -38,42 +38,27 @@ Client.prototype.createPersistentSubscriptionToStream = async function (
   settings: PersistentSubscriptionToStreamSettings,
   baseOptions: BaseOptions = {}
 ): Promise<void> {
-  const { serverVersion } = await this.capabilities;
-
-  if (
-    semver.lt(serverVersion, "21.10.1") &&
-    settings.consumerStrategyName === PINNED_BY_CORRELATION
-  ) {
-    console.warn(
-      `Consumer strategy "${PINNED_BY_CORRELATION}" requires server version ${serverVersion} or higher. "${ROUND_ROBIN}" will be used instead.`
-    );
-    settings.consumerStrategyName = ROUND_ROBIN;
-  }
-
   const req = new CreateReq();
   const options = new CreateReq.Options();
   const identifier = createStreamIdentifier(streamName);
   const reqSettings = settingsToGRPC(settings, CreateReq.Settings);
+  const streamOptions = new CreateReq.StreamOptions();
 
-  // Add deprecated revision option for pre-21.10 support
+  streamOptions.setStreamIdentifier(identifier);
   switch (settings.startFrom) {
-    case START: {
-      reqSettings.setRevision(BigInt(0).toString(10));
+    case START:
+      streamOptions.setStart(new Empty());
       break;
-    }
-    case END: {
-      // This is the largest possible value of UInt64
-      reqSettings.setRevision("18446744073709551615");
+    case END:
+      streamOptions.setEnd(new Empty());
       break;
-    }
-    default: {
-      reqSettings.setRevision(settings.startFrom.toString(10));
+    default:
+      streamOptions.setRevision(settings.startFrom.toString(10));
       break;
-    }
   }
 
   options.setGroupName(groupName);
-  options.setStreamIdentifier(identifier);
+  options.setStream(streamOptions);
   options.setSettings(reqSettings);
 
   req.setOptions(options);

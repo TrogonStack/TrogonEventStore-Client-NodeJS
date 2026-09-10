@@ -93,7 +93,7 @@ const subscription = client.subscribeToAll({ fromPosition: END });
 
 ## Resolving link-to events
 
-Link-to events point to events in other streams in KurrentDB. These are
+Link-to events point to events in other streams in TrogonEventStore. These are
 generally created by projections such as the `$by_event_type` projection which
 links events of the same event type into the same stream. This makes it easier
 to look up all events of a specific type.
@@ -140,7 +140,7 @@ need to store the current position of the subscription somewhere, and then use
 it to restore the subscription from the point where it dropped off:
 
 ```ts{7,14-16}
-import { ReadRevision, START } from "@kurrent/kurrentdb-client";
+import { ReadRevision, START } from "@trogonstack/trogon-eventstore-client";
 
 let checkpoint: ReadRevision = START;
 
@@ -163,7 +163,7 @@ stream. As mentioned previously, the `$all` stream position consists of two big
 integers (prepare and commit positions), not one:
 
 ```ts{6,13-15}
-import { ReadRevision, START } from "@kurrent/kurrentdb-client";
+import { ReadRevision, START } from "@trogonstack/trogon-eventstore-client";
 
 let checkpoint: ReadRevision = START;
 
@@ -182,13 +182,13 @@ subscription
 
 ## Handling Subscription State Changes
 
-::: info KurrentDB 23.10.0+
-This feature requires KurrentDB version 23.10.0 or later.
+::: info TrogonEventStore 23.10.0+
+This feature requires TrogonEventStore version 23.10.0 or later.
 :::
 
 When a subscription processes historical events and reaches the end of the
 stream, it transitions from "catching up" to "live" mode. You can detect this
-transition using the `caughtUp` event on the subscription. 
+transition using the `caughtUp` event on the subscription.
 
 ```ts{10-12}
 const subscription = client.subscribeToStream("orders");
@@ -236,7 +236,7 @@ const subscription = client.subscribeToStream(
 
 ## Server-side Filtering
 
-KurrentDB allows you to filter events while subscribing to the `$all` stream to only receive the events you care about. You can filter by event type or stream name using a regular expression or a prefix. Server-side filtering is currently only available on the `$all` stream.
+TrogonEventStore allows you to filter events while subscribing to the `$all` stream to only receive the events you care about. You can filter by event type or stream name using a regular expression or a prefix. Server-side filtering is currently only available on the `$all` stream.
 
 ::: tip
 Server-side filtering was introduced as a simpler alternative to projections. You should consider filtering before creating a projection to include the events you care about.
@@ -317,7 +317,7 @@ A checkpoint is the position of an event in the `$all` stream to which your appl
 To create a checkpoint, store the event's commit or prepare position.
 
 ::: warning
-If your database contains events created by the legacy TCP client using the [transaction feature](https://docs.kurrent.io/clients/tcp/dotnet/21.2/appending.html#transactions), you should store both the commit and prepare positions together as your checkpoint.
+If your database contains events created by the legacy TCP client using the transaction feature#transactions), you should store both the commit and prepare positions together as your checkpoint.
 :::
 
 ### Updating checkpoints at regular intervals
@@ -342,7 +342,7 @@ By default, the checkpoint notification is sent after every 32 non-system events
 
 ### Configuring the checkpoint interval
 
-You can adjust the checkpoint interval to change how often the client is notified. 
+You can adjust the checkpoint interval to change how often the client is notified.
 
 ```ts{4-11}
 const subscription = client

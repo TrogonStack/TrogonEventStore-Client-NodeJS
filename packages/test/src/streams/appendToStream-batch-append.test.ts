@@ -7,20 +7,25 @@ import {
   matchServerVersion,
   optionalDescribe,
 } from "@test-utils";
-import { KurrentDBClient, jsonEvent } from "@kurrent/kurrentdb-client";
-import { StreamsClient } from "@kurrent/kurrentdb-client/generated/kurrentdb/protocols/v1/streams_grpc_pb";
+import {
+  TrogonEventStoreClient,
+  jsonEvent,
+} from "@trogonstack/trogon-eventstore-client";
+import { StreamsClient } from "@trogonstack/trogon-eventstore-client/generated/event_store/protocols/v1/streams_grpc_pb";
 
 describe("appendToStream - batch append", () => {
   const supported = matchServerVersion`>=21.10`;
 
   const node = createTestNode();
-  let client!: KurrentDBClient;
-  let batchSpy!: jest.SpiedFunction<KurrentDBClient["GRPCStreamCreator"]>;
-  let executeSpy!: jest.SpiedFunction<KurrentDBClient["execute"]>;
+  let client!: TrogonEventStoreClient;
+  let batchSpy!: jest.SpiedFunction<
+    TrogonEventStoreClient["GRPCStreamCreator"]
+  >;
+  let executeSpy!: jest.SpiedFunction<TrogonEventStoreClient["execute"]>;
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
     batchSpy = spyOn.call(client, "GRPCStreamCreator");
     executeSpy = spyOn.call(client, "execute");
   });
@@ -113,12 +118,18 @@ describe("appendToStream - batch append", () => {
     });
 
     test("A stream error does not reject in-flight appends on sibling streams", async () => {
-      const clientA = KurrentDBClient.connectionString(node.connectionString());
-      const clientB = KurrentDBClient.connectionString(node.connectionString());
+      const clientA = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
+      const clientB = TrogonEventStoreClient.connectionString(
+        node.connectionString()
+      );
       const aSpy = jest.spyOn(
         clientA,
         "GRPCStreamCreator" as never
-      ) as unknown as jest.SpiedFunction<KurrentDBClient["GRPCStreamCreator"]>;
+      ) as unknown as jest.SpiedFunction<
+        TrogonEventStoreClient["GRPCStreamCreator"]
+      >;
 
       try {
         await clientA.appendToStream("sibling_a_warmup", jsonTestEvents());
@@ -234,12 +245,12 @@ describe("appendToStream - batch append", () => {
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-function spyOn(this: KurrentDBClient, method: string) {
+function spyOn(this: TrogonEventStoreClient, method: string) {
   return jest.spyOn(this, method as never) as any;
 }
 
 function extractBatchStream(
-  this: KurrentDBClient,
+  this: TrogonEventStoreClient,
   clientConstructor: any,
   name: any,
   _: any,

@@ -1,4 +1,4 @@
-import { KurrentDBClient } from "@kurrent/kurrentdb-client";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client";
 import { createTestNode, jsonTestEvents } from "@test-utils";
 import { randomUUID as uuid } from "crypto";
 
@@ -16,12 +16,12 @@ describe("[sample] user certificates", () => {
   });
 
   test("connection string", async () => {
-    const connectionStringTemplate = `kurrentdb://admin:changeit@{endpoint}?tls=true&userCertFile={pathToCaFile}&userKeyFile={pathToKeyFile}`;
+    const connectionStringTemplate = `esdb://admin:changeit@{endpoint}?tls=true&userCertFile={pathToCaFile}&userKeyFile={pathToKeyFile}`;
 
     try {
       // region client-with-user-certificates
-      const connectionString = `kurrentdb://admin:changeit@{endpoint}?tls=true&userCertFile={pathToCaFile}&userKeyFile={pathToKeyFile}`;
-      const client = KurrentDBClient.connectionString(connectionString);
+      const connectionString = `esdb://admin:changeit@{endpoint}?tls=true&userCertFile={pathToCaFile}&userKeyFile={pathToKeyFile}`;
+      const client = TrogonEventStoreClient.connectionString(connectionString);
       // endregion client-with-user-certificates
 
       expect(connectionString).toBe(connectionStringTemplate);
@@ -39,7 +39,8 @@ describe("[sample] user certificates", () => {
 
     connectionStringTest = `${connectionStringTest}&tlsCaFile=${node.certPath.root}`;
 
-    const client = KurrentDBClient.connectionString(connectionStringTest);
+    const client =
+      TrogonEventStoreClient.connectionString(connectionStringTest);
 
     const result = await client.appendToStream(STREAM_NAME, jsonTestEvents(2));
     expect(result).toBeDefined();

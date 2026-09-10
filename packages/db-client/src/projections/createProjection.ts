@@ -1,8 +1,8 @@
 import {
   ProjectionsClient,
   ProjectionsService,
-} from "../../generated/kurrentdb/protocols/v1/projectionmanagement_grpc_pb";
-import { CreateReq } from "../../generated/kurrentdb/protocols/v1/projectionmanagement_pb";
+} from "../../generated/event_store/protocols/v1/projectionmanagement_grpc_pb";
+import { CreateReq } from "../../generated/event_store/protocols/v1/projectionmanagement_pb";
 
 import { Client } from "../Client";
 import { PROJECTION_ENGINE_V1, PROJECTION_ENGINE_V2 } from "../constants";
@@ -29,7 +29,7 @@ export interface CreateProjectionOptions extends BaseOptions {
    * Selects the projection engine version. Pinned at create time and
    * cannot be changed later. V2 is opt-in and does not support
    * `trackEmittedStreams`, bi-state projections, or live `outputState`
-   * result streams. See the KurrentDB documentation for the full list of
+   * result streams. See the TrogonEventStore documentation for the full list of
    * limitations before choosing V2.
    * @defaultValue {@link PROJECTION_ENGINE_V1}
    */
@@ -81,7 +81,7 @@ const createProjectionGRPC = async function (
   {
     emitEnabled = false,
     trackEmittedStreams = false,
-    engineVersion = PROJECTION_ENGINE_V1,
+    engineVersion: _engineVersion = PROJECTION_ENGINE_V1,
     ...baseOptions
   }: CreateProjectionOptions = {}
 ): Promise<void> {
@@ -95,9 +95,6 @@ const createProjectionGRPC = async function (
 
   options.setContinuous(continuous);
   options.setQuery(query);
-  if (engineVersion === PROJECTION_ENGINE_V2) {
-    options.setEngineVersion(ENGINE_VERSION_WIRE[engineVersion]);
-  }
 
   req.setOptions(options);
 

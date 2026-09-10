@@ -1,15 +1,27 @@
+import type { ReadableOptions } from "stream";
+
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
+import { StreamsClient } from "../../generated/event_store/protocols/v1/streams_grpc_pb";
+import { ReadReq } from "../../generated/event_store/protocols/v1/streams_pb";
+
 import { Client } from "../Client";
-import { FORWARDS, START, END } from "../constants";
+import { BACKWARDS, END, FORWARDS, START } from "../constants";
 import type {
   BaseOptions,
   Direction,
   EventType,
   ReadRevision,
   ResolvedEvent,
+  StreamingRead,
 } from "../types";
-import { InvalidArgumentError } from "../utils";
-import { convertRustEvent } from "../utils/convertRustEvent";
-import { convertBridgeError } from "../utils/convertBridgeError";
+import {
+  debug,
+  convertGrpcEvent,
+  createStreamIdentifier,
+  InvalidArgumentError,
+} from "../utils";
+
+import { ReadStream } from "./utils/ReadStream";
 
 export interface ReadStreamOptions extends BaseOptions {
   /**
@@ -45,8 +57,9 @@ declare module "../Client" {
      */
     readStream<KnownEventType extends EventType = EventType>(
       streamName: string,
-      options?: ReadStreamOptions
-    ): AsyncIterableIterator<ResolvedEvent<KnownEventType>>;
+      options?: ReadStreamOptions,
+      readableOptions?: ReadableOptions
+    ): StreamingRead<ResolvedEvent<KnownEventType>>;
   }
 }
 
@@ -61,60 +74,90 @@ Client.prototype.readStream = function <
     resolveLinkTos = false,
     direction = FORWARDS,
     ...baseOptions
-  }: ReadStreamOptions = {}
-): AsyncIterableIterator<ResolvedEvent<KnownEventType>> {
-  if (
-    fromRevision !== START &&
-    fromRevision !== END &&
-    typeof fromRevision === "bigint"
-  ) {
-    const lowerBound = BigInt("0");
-    const upperBound = BigInt("0xffffffffffffffff");
+  }: ReadStreamOptions = {},
+  readableOptions: ReadableOptions = {}
+): StreamingRead<ResolvedEvent<KnownEventType>> {
+  const req = new ReadReq();
+  const options = new ReadReq.Options();
+  const streamOptions = new ReadReq.Options.StreamOptions();
+  const uuidOption = new ReadReq.Options.UUIDOption();
+  const identifier = createStreamIdentifier(streamName);
 
-    if (fromRevision < lowerBound) {
-      throw new InvalidArgumentError(
-        `fromRevision value must be a non-negative integer. Value Received: ${fromRevision}`
-      );
+  uuidOption.setString(new Empty());
+  streamOptions.setStreamIdentifier(identifier);
+
+  switch (fromRevision) {
+    case START: {
+      streamOptions.setStart(new Empty());
+      break;
     }
+    case END: {
+      streamOptions.setEnd(new Empty());
+      break;
+    }
+    default: {
+      const lowerBound = BigInt("0");
+      const upperBound = BigInt("0xffffffffffffffff");
 
-    if (fromRevision > upperBound) {
-      throw new InvalidArgumentError(
-        `fromRevision value must be a non-negative integer, range from 0 to 18446744073709551615. Value Received: ${fromRevision}`
-      );
+      if (fromRevision < lowerBound) {
+        throw new InvalidArgumentError(
+          `fromRevision value must be a non-negative integer. Value Received: ${fromRevision}`
+        );
+      }
+
+      if (fromRevision > upperBound) {
+        throw new InvalidArgumentError(
+          `fromRevision value must be a non-negative integer, range from 0 to 18446744073709551615. Value Received: ${fromRevision}`
+        );
+      }
+
+      streamOptions.setRevision(fromRevision.toString(10));
+      break;
     }
   }
 
-  const convert = async function* (
-    this: Client
-  ): AsyncIterableIterator<ResolvedEvent<KnownEventType>> {
-    const credentials = await this.resolveBridgeCredentials(
-      baseOptions.credentials
-    );
+  options.setStream(streamOptions);
+  options.setResolveLinks(resolveLinkTos);
+  options.setCount(maxCount.toString(10));
+  options.setUuidOption(uuidOption);
+  options.setNoFilter(new Empty());
 
-    let stream;
-    try {
-      stream = this.rustClient.readStream(streamName, {
-        credentials,
-        direction,
-        fromRevision,
-        maxCount: BigInt(maxCount),
-        requiresLeader: baseOptions.requiresLeader ?? false,
-        resolvesLink: resolveLinkTos,
-      });
-    } catch (error) {
-      throw convertBridgeError(error, streamName);
+  switch (direction) {
+    case FORWARDS: {
+      options.setReadDirection(0);
+      break;
     }
-
-    try {
-      for await (const events of stream) {
-        for (const event of events) {
-          yield convertRustEvent(event);
-        }
-      }
-    } catch (error) {
-      throw convertBridgeError(error, streamName);
+    case BACKWARDS: {
+      options.setReadDirection(1);
+      break;
     }
-  };
+  }
 
-  return convert.call(this);
+  req.setOptions(options);
+
+  debug.command("readStream: %O", {
+    streamName,
+    maxCount,
+    options: {
+      fromRevision,
+      resolveLinkTos,
+      direction,
+      ...baseOptions,
+    },
+  });
+  debug.command_grpc("readStream: %g", req);
+
+  const createGRPCStream = this.GRPCStreamCreator(
+    StreamsClient,
+    "readStream",
+    (client) =>
+      client.read(
+        req,
+        ...this.callArguments(baseOptions, {
+          deadline: Infinity,
+        })
+      )
+  );
+
+  return new ReadStream(createGRPCStream, convertGrpcEvent, readableOptions);
 };

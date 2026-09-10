@@ -1,26 +1,26 @@
 {
-  "name": "kurrent-node-client-repository",
+  "name": "trogon-eventstore-client-nodejs",
   "private": true,
   "packageManager": "yarn@4.6.0",
   "scripts": {
     "build": "nx run-many --target=build",
     "build:ts": "nx run-many --target=build:ts",
     "build:watch": "nx run-many --target=build:watch --parallel",
-    "lint": "prettier --write \"packages/*/src/**/**/!(*.d).{ts,json}\" && eslint packages/*/src --ext .ts --no-error-on-unmatched-pattern",
+    "lint": "prettier --check \"packages/*/src/**/**/!(*.d).{ts,json}\" && eslint packages/*/src --ext .ts --no-error-on-unmatched-pattern",
     "prettier:fix": "prettier --write \"packages/*/src/**/**/!(*.d).{ts,json}\"",
     "clean": "nx run-many --target=clean",
     "prepublishOnly": "yarn clean && yarn build && yarn test",
     "test": "nx run test:test"
   },
-  "author": "Kurrent, Inc",
+  "author": "Straw Hat, LLC",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/kurrent-io/KurrentDB-Client-NodeJS/issues"
+    "url": "https://github.com/TrogonStack/TrogonEventStore-Client-NodeJS/issues"
   },
   "workspaces": [
     "packages/*"
   ],
-  "homepage": "https://developers.kurrent.io/clients/grpc/getting-started?codeLanguage=NodeJS",
+  "homepage": "https://github.com/TrogonStack/TrogonEventStore-Client-NodeJS",
   "devDependencies": {
     "@tsconfig/node18": "^18.2.4",
     "@types/node": "18.19.76",

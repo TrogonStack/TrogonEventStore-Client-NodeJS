@@ -1,8 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`keepAlive settings should throw if < -1 keepAliveInterval connectionString 1`] = `"Invalid keepAliveInterval of -2. Please provide a positive integer, or -1 to disable"`;
+exports[`keepAlive settings should throw if < -1 keepAliveInterval connectionString 1`] = `"Invalid keepAliveInterval "-2". Please provide a positive integer, or -1 to disable."`;
 
-exports[`keepAlive settings should throw if < -1 keepAliveTimeout connectionString 1`] = `"Invalid keepAliveTimeout of -100. Please provide a positive integer, or -1 to disable"`;
+exports[`keepAlive settings should throw if < -1 keepAliveTimeout connectionString 1`] = `"Invalid keepAliveTimeout "-100". Please provide a positive integer, or -1 to disable."`;
 
 exports[`keepAlive settings should warn if keepAliveInterval is less than 10_000ms (but more than -1) connectionString 1`] = `
 [

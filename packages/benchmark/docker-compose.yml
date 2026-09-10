@@ -1,6 +1,6 @@
 services:
   esdb:
-    image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:latest
+    image: ghcr.io/trogonstack/trogoneventstore:ci
     ports:
       - 2113:2113
     environment:

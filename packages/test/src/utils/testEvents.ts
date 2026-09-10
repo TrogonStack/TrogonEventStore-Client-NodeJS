@@ -1,4 +1,8 @@
-import { EventData, jsonEvent, binaryEvent } from "@kurrent/kurrentdb-client";
+import {
+  EventData,
+  jsonEvent,
+  binaryEvent,
+} from "@trogonstack/trogon-eventstore-client";
 
 export interface TestEventData {
   message: "test";

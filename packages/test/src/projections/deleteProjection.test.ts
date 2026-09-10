@@ -3,18 +3,18 @@
 import { createTestNode, matchServerVersion } from "@test-utils";
 
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   RUNNING,
   DELETING,
   STOPPED,
   ABORTED,
   NotFoundError,
   UnknownError,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("deleteProjection", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   const projection = `
   fromAll()
@@ -29,7 +29,7 @@ describe("deleteProjection", () => {
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {
@@ -53,11 +53,9 @@ describe("deleteProjection", () => {
     expect(disabledDetails).toBeDefined();
 
     // Incorrect projection status was switched (ABORTED -> STOPPED) in
-    // https://github.com/kurrent-io/EventStore/pull/2944
     expect([STOPPED, ABORTED]).toContain(disabledDetails.projectionStatus);
 
     if (disabledDetails.projectionStatus === ABORTED) {
-      // before https://github.com/kurrent-io/EventStore/pull/2944
       // writeCheckpoint had to be false to stop the projection
       await client.abortProjection(PROJECTION_NAME);
 

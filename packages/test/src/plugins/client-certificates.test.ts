@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createTestNode, jsonTestEvents } from "@test-utils";
-import { AccessDeniedError, KurrentDBClient } from "@kurrent/kurrentdb-client";
+import {
+  AccessDeniedError,
+  TrogonEventStoreClient,
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("client certificates", () => {
   const node = createTestNode();
@@ -14,10 +17,10 @@ describe("client certificates", () => {
   });
 
   describe("client initialized with only the admin certificate", () => {
-    let client: KurrentDBClient;
+    let client: TrogonEventStoreClient;
 
     beforeEach(() => {
-      client = KurrentDBClient.connectionString(
+      client = TrogonEventStoreClient.connectionString(
         node.connectionStringWithOverrides({
           userCertificates: "valid",
         })
@@ -49,7 +52,7 @@ describe("client certificates", () => {
   });
 
   test("user credentials takes precedence over the client certificate during initialization", async () => {
-    const clientWithCredentials = KurrentDBClient.connectionString(
+    const clientWithCredentials = TrogonEventStoreClient.connectionString(
       node.connectionStringWithOverrides({
         userCertificates: "valid",
         defaultUserCredentials: { username: "wrong", password: "password" },
@@ -65,7 +68,7 @@ describe("client certificates", () => {
   });
 
   test("When the client is initialized with invalid certificate, user credentials take precedence if overridden during a call", async () => {
-    const clientWithBadCertificate = KurrentDBClient.connectionString(
+    const clientWithBadCertificate = TrogonEventStoreClient.connectionString(
       node.connectionStringWithOverrides({
         userCertificates: "invalid",
       })

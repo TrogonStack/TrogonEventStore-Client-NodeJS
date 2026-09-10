@@ -1,6 +1,6 @@
 # Contributing
 
-Development is done on the `master` branch. We attempt to do our best to ensure that the history remains clean and to do so, we generally ask contributors to squash their commits into a set or single logical commit.
+Development is done on the `main` branch. We ask contributors to keep commits focused and use Conventional Commits.
 
 ## Initial Setup
 
@@ -10,8 +10,8 @@ Development is done on the `master` branch. We attempt to do our best to ensure 
 **Repository Setup:**
 1. Clone the repository:
    ```bash
-   $ git clone git@github.com:EventStore/KurrentDB-Client-NodeJS.git
-   $ cd KurrentDB-Client-NodeJS
+   $ git clone git@github.com:TrogonStack/TrogonEventStore-Client-NodeJS.git
+   $ cd TrogonEventStore-Client-NodeJS
    ```
 2. Install all necessary dependencies:
    ```bash
@@ -70,10 +70,10 @@ $ yarn test:debug // debug all tests
 $ yarn test:debug ReadAll // only the ReadAll tests
 ```
 
-Specific docker images can be specified via the environment variable `KURRENT_IMAGE`.
+Specific Docker images can be specified via the environment variable `TROGON_EVENTSTORE_IMAGE`.
 
 ```shell script
-$ npx cross-env KURRENT_IMAGE=77d63f3f0ab3 jest
+$ npx cross-env TROGON_EVENTSTORE_IMAGE=ghcr.io/trogonstack/trogoneventstore:ci jest
 ```
 
 See [Jest] documentation for more options.
@@ -81,8 +81,8 @@ See [Jest] documentation for more options.
 ### Debugging
 
 This project uses the [debug] module internally to log information about connections, options and GRPC requests.
-To see all the internal logs, set the DEBUG environment variable to `kdb:*` when launching your app.
-Logs can be further filtered with glob patterns, for example, only connection logs: `kdb:connection`, everything but grpc logs: `kdb:*,-*:grpc`.
+To see all the internal logs, set the DEBUG environment variable to `trogon-eventstore:*` when launching your app.
+Logs can be further filtered with glob patterns, for example, only connection logs: `trogon-eventstore:connection`, everything but grpc logs: `trogon-eventstore:*,-*:grpc`.
 
 You can set a few environment variables that will further change the behavior of the debug logging:
 
@@ -103,4 +103,4 @@ See the Node.js documentation for [`util.inspect()`] for the complete list.
 [jest]: https://jestjs.io/
 [debug]: https://github.com/visionmedia/debug
 [`util.inspect()`]: https://nodejs.org/api/util.html#util_util_inspect_object_options
-[KurrentDB-Client-NodeJS]: https://github.com/kurrent-io/KurrentDB-Client-NodeJS
+[TrogonEventStore-Client-NodeJS]: https://github.com/TrogonStack/TrogonEventStore-Client-NodeJS

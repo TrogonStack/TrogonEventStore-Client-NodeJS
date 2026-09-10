@@ -6,12 +6,12 @@ import {
   RANDOM,
   READ_ONLY_REPLICA,
   VNodeState,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 import {
   determineBestNode,
   filterAndOrderMembers,
   MemberInfo,
-} from "@kurrent/kurrentdb-client/dist/Client/discovery";
+} from "@trogonstack/trogon-eventstore-client/dist/Client/discovery";
 
 const member = ({
   isAlive = true,

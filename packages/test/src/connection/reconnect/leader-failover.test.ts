@@ -6,11 +6,11 @@ import {
 } from "@test-utils";
 import {
   jsonEvent,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   LEADER,
   FOLLOWER,
   START,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 jest.setTimeout(120_000);
 
@@ -33,7 +33,7 @@ describe("reconnect", () => {
       // 4. Old leader comes back as follower
       // 5. Client should NOT reconnect to the old (now follower) node
 
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides({
           nodePreference: LEADER,
           defaultDeadline: 100_000_000,
@@ -98,7 +98,7 @@ describe("reconnect", () => {
       // handleError() and therefore may not trigger reconnection.
 
       // Connect to a follower to reliably trigger NotLeader
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides({
           nodePreference: FOLLOWER,
           defaultDeadline: 100_000_000,
@@ -147,7 +147,7 @@ describe("reconnect", () => {
     test("readAll with requiresLeader should reconnect after NotLeader", async () => {
       // Same test but for readAll, which also goes through the Rust bridge
 
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides({
           nodePreference: FOLLOWER,
           defaultDeadline: 100_000_000,
@@ -186,7 +186,7 @@ describe("reconnect", () => {
       // internal reconnection, subsequent reads may need a couple of attempts
       // while the cluster stabilizes.
 
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides({
           nodePreference: LEADER,
           defaultDeadline: 100_000_000,
@@ -257,7 +257,7 @@ describe("reconnect", () => {
       // Multiple sequential reads all failing with NotLeader
       // without recovery, even though the first error should trigger reconnection
 
-      const client = KurrentDBClient.connectionString(
+      const client = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides({
           nodePreference: FOLLOWER,
           defaultDeadline: 100_000_000,
@@ -301,7 +301,7 @@ describe("reconnect", () => {
 
   describe("concurrent operations during NotLeader", () => {
     const cluster = createTestCluster();
-    let client!: KurrentDBClient;
+    let client!: TrogonEventStoreClient;
 
     beforeAll(async () => {
       await cluster.up();
@@ -313,7 +313,7 @@ describe("reconnect", () => {
 
     test("multiple rapid write operations after NotLeader should all eventually succeed", async () => {
       // Connect to a follower to reliably trigger NotLeader errors
-      client = KurrentDBClient.connectionString(
+      client = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides({
           nodePreference: FOLLOWER,
           defaultDeadline: 100_000_000,
@@ -385,7 +385,7 @@ describe("reconnect", () => {
       // The gRPC channel and Rust bridge have independent connections,
       // so each must encounter and recover from NotLeader separately.
 
-      client = KurrentDBClient.connectionString(
+      client = TrogonEventStoreClient.connectionString(
         cluster.connectionStringWithOverrides({
           nodePreference: FOLLOWER,
           defaultDeadline: 100_000_000,

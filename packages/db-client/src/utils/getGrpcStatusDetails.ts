@@ -1,5 +1,5 @@
 import { ServiceError } from "@grpc/grpc-js";
-import { Status } from "../../generated/kurrentdb/protocols/v1/status_pb";
+import { Status } from "../../generated/event_store/protocols/v1/status_pb";
 
 export const getGrpcStatusDetails = (
   error: ServiceError

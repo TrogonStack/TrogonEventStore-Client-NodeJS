@@ -3,19 +3,15 @@
   "packageManager": "yarn@4.6.0",
   "private": true,
   "scripts": {
-    "benchmark": "yarn benchmark:legacy && yarn benchmark:kurrent && yarn benchmark:bridge",
-    "benchmark:legacy": "node ./legacy/readStream.js",
-    "benchmark:kurrent": "node ./kurrent/readStream.js",
-    "benchmark:bridge": "node ./bridge/readStream.js",
+    "benchmark": "yarn benchmark:trogon",
+    "benchmark:trogon": "node ./trogon-eventstore/readStream.js",
     "loadEvents": "node ./load"
   },
   "dependencies": {
-    "@eventstore/db-client": "^6.2.1",
-    "@kurrent/bridge": "^0.2.2",
     "tinybench": "^3.1.1"
   },
   "devDependencies": {
-    "@kurrent/kurrentdb-client": "workspace:^",
+    "@trogonstack/trogon-eventstore-client": "workspace:^",
     "clinic": "^13.0.0"
   }
 }

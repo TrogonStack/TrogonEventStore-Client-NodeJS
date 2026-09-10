@@ -1,10 +1,10 @@
 import { createTestNode } from "@test-utils";
 
-import { KurrentDBClient } from "@kurrent/kurrentdb-client";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client";
 
 describe("list projections", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   const basicProjection = `
   fromAll()
@@ -19,7 +19,7 @@ describe("list projections", () => {
 
   beforeAll(async () => {
     await node.up();
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
 
     for (const name of projectionNames) {
       await client.createProjection(name, basicProjection);

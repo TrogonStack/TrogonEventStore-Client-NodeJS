@@ -3,21 +3,21 @@ import { createTestNode, delay, jsonTestEvents } from "@test-utils";
 import {
   AccessDeniedError,
   END,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   PersistentSubscriptionDoesNotExistError,
   persistentSubscriptionToStreamSettingsFromDefaults,
   ROUND_ROBIN,
   START,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("getPersistentSubscriptionToStreamInfo", () => {
   const node = createTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
 
-    client = KurrentDBClient.connectionString(
+    client = TrogonEventStoreClient.connectionString(
       node.connectionStringWithOverrides({
         connectionName: "getPersistentSubscriptionInfo test client",
       })

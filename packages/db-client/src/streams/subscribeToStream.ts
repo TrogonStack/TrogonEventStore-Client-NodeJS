@@ -1,8 +1,8 @@
 import type { ReadableOptions } from "stream";
 
-import { StreamsClient } from "../../generated/kurrentdb/protocols/v1/streams_grpc_pb";
-import { ReadReq } from "../../generated/kurrentdb/protocols/v1/streams_pb";
-import { Empty } from "../../generated/kurrentdb/protocols/v1/shared_pb";
+import { StreamsClient } from "../../generated/event_store/protocols/v1/streams_grpc_pb";
+import { ReadReq } from "../../generated/event_store/protocols/v1/streams_pb";
+import { Empty } from "../../generated/event_store/protocols/v1/shared_pb";
 
 import type {
   ReadRevision,

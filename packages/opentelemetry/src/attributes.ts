@@ -1,9 +1,9 @@
-const kurrentdb = "db.kurrentdb";
+const trogonEventStore = "db.trogon_event_store";
 const db = "db";
 const server = "server";
 const streams = "streams";
 
-export const KurrentAttributes = {
+export const TrogonEventStoreAttributes = {
   DATABASE_USER: `${db}.user`,
   DATABASE_SYSTEM: `${db}.system`,
   DATABASE_OPERATION: `${db}.operation`,
@@ -12,12 +12,11 @@ export const KurrentAttributes = {
   SERVER_PORT: `${server}.port`,
 
   STREAM_APPEND: `${streams}.append`,
-  STREAM_MULTI_APPEND: `${streams}.multi-append`,
   STREAM_SUBSCRIBE: `${streams}.subscribe`,
 
-  KURRENT_DB_STREAM: `${kurrentdb}.stream`,
-  KURRENT_DB_SUBSCRIPTION_ID: `${kurrentdb}.subscription.id`,
-  KURRENT_DB_EVENT_ID: `${kurrentdb}.event.id`,
-  KURRENT_DB_EVENT_TYPE: `${kurrentdb}.event.type`,
-  KURRENT_DB_AUTH_KIND: `${kurrentdb}.auth.kind`,
+  TROGON_EVENT_STORE_STREAM: `${trogonEventStore}.stream`,
+  TROGON_EVENT_STORE_SUBSCRIPTION_ID: `${trogonEventStore}.subscription.id`,
+  TROGON_EVENT_STORE_EVENT_ID: `${trogonEventStore}.event.id`,
+  TROGON_EVENT_STORE_EVENT_TYPE: `${trogonEventStore}.event.type`,
+  TROGON_EVENT_STORE_AUTH_KIND: `${trogonEventStore}.auth.kind`,
 };

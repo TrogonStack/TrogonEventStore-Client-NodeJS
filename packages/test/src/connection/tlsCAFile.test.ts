@@ -1,7 +1,7 @@
 import { relative, resolve } from "path";
 
 import { collect, createTestNode, jsonTestEvents } from "@test-utils";
-import { KurrentDBClient } from "@kurrent/kurrentdb-client";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client";
 
 describe("tlsCAFile", () => {
   const node = createTestNode();
@@ -24,7 +24,7 @@ describe("tlsCAFile", () => {
   ])("Path can be %s", async (name, tlsCAFile) => {
     const STREAM_NAME = `${name}_stream`;
 
-    const client = KurrentDBClient.connectionString`kurrentdb://admin:changeit@${
+    const client = TrogonEventStoreClient.connectionString`esdb://admin:changeit@${
       node.uri
     }?tlsCAFile=${tlsCAFile()}`;
 
@@ -43,7 +43,7 @@ describe("tlsCAFile", () => {
   test("If a file was not found, error should be thrown", () => {
     expect(
       () =>
-        KurrentDBClient.connectionString`kurrentdb://admin:changeit@${node.uri}?tlsCAFile=/some/path.ca`
+        TrogonEventStoreClient.connectionString`esdb://admin:changeit@${node.uri}?tlsCAFile=/some/path.ca`
     ).toThrowErrorMatchingSnapshot();
   });
 });

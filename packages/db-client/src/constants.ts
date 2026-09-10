@@ -68,7 +68,7 @@ export const UNBOUNDED = "unbounded";
 // system streams
 
 /**
- * A stream containing links pointing to each stream in the KurrentDB.
+ * A stream containing links pointing to each stream in the TrogonEventStore.
  */
 export const STREAMS_STREAM = "$streams";
 

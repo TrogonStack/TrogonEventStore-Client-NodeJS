@@ -1,5 +1,5 @@
 import { collect, createTestNode, jsonTestEvents } from "@test-utils";
-import { KurrentDBClient } from "@kurrent/kurrentdb-client";
+import { TrogonEventStoreClient } from "@trogonstack/trogon-eventstore-client";
 
 describe("tlsVerifyCert", () => {
   const node = createTestNode();
@@ -15,7 +15,7 @@ describe("tlsVerifyCert", () => {
   test("Connects to a node with an untrusted certificate when set to false", async () => {
     const STREAM_NAME = "tls_verify_cert_false_stream";
 
-    const client = KurrentDBClient.connectionString`kurrentdb://admin:changeit@${node.uri}?tlsVerifyCert=false`;
+    const client = TrogonEventStoreClient.connectionString`esdb://admin:changeit@${node.uri}?tlsVerifyCert=false`;
 
     const appendResult = await client.appendToStream(
       STREAM_NAME,

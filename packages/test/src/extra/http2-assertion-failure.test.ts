@@ -1,20 +1,20 @@
 import { randomUUID as uuid } from "crypto";
 import { createInsecureTestNode, delay, jsonTestEvents } from "@test-utils";
 import {
-  KurrentDBClient,
+  TrogonEventStoreClient,
   NO_STREAM,
   ResolvedEvent,
   START,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 describe("http2 assertion failure", () => {
   const node = createInsecureTestNode();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   beforeAll(async () => {
     await node.up();
 
-    client = KurrentDBClient.connectionString(node.connectionString());
+    client = TrogonEventStoreClient.connectionString(node.connectionString());
   });
 
   afterAll(async () => {

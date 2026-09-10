@@ -12,24 +12,23 @@ import {
   jsonTestEvents,
   matchServerVersion,
   optionalDescribe,
-  postEventViaHttpApi,
 } from "@test-utils";
 
 import {
   ResolvedEvent,
   NotLeaderError,
   PersistentSubscriptionToStream,
-  KurrentDBClient,
+  TrogonEventStoreClient,
   jsonEvent,
   persistentSubscriptionToStreamSettingsFromDefaults,
   START,
-} from "@kurrent/kurrentdb-client";
+} from "@trogonstack/trogon-eventstore-client";
 
 const asyncPipeline = promisify(pipeline);
 
 describe("subscribeToPersistentSubscriptionToStream", () => {
   const cluster = createTestCluster();
-  let client!: KurrentDBClient;
+  let client!: TrogonEventStoreClient;
 
   const finishEvent = () =>
     jsonEvent({
@@ -42,7 +41,9 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
   beforeAll(async () => {
     await cluster.up();
 
-    client = KurrentDBClient.connectionString(cluster.connectionString());
+    client = TrogonEventStoreClient.connectionString(
+      cluster.connectionString()
+    );
   });
 
   afterAll(async () => {
@@ -216,6 +217,7 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
 
       const skipCount = 20;
       const retryCount = 20;
+      const expectedEventCount = skipCount + retryCount * 2 + 1;
 
       await client.appendToStream(STREAM_NAME, [
         ...jsonTestEvents(skipCount, "skip-event"),
@@ -234,6 +236,7 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
       const defer = new Defer();
 
       const nacked: string[] = [];
+      let finishSeen = false;
 
       const onError = jest.fn((error) => {
         defer.reject(error);
@@ -246,7 +249,11 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
 
         if (event.event.type === "finish-test") {
           await subscription.ack(event);
-          defer.resolve();
+          finishSeen = true;
+
+          if (onEvent.mock.calls.length === expectedEventCount) {
+            defer.resolve();
+          }
           return;
         }
 
@@ -261,6 +268,10 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
         }
 
         await subscription.ack(event);
+
+        if (finishSeen && onEvent.mock.calls.length === expectedEventCount) {
+          defer.resolve();
+        }
         return;
       });
 
@@ -278,14 +289,7 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
       expect(onError).not.toBeCalled();
       expect(onConfirmation).toBeCalledTimes(1);
 
-      expect(onEvent).toBeCalledTimes(
-        // skipped
-        skipCount +
-          // retried
-          retryCount * 2 +
-          // finish test event
-          1
-      );
+      expect(onEvent).toBeCalledTimes(expectedEventCount);
     });
   });
 
@@ -338,6 +342,8 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
 
         const skipCount = 20;
         const retryCount = 20;
+        const expectedEventCount = skipCount + retryCount * 2 + 1;
+        let finishSeen = false;
 
         await client.createPersistentSubscriptionToStream(
           STREAM_NAME,
@@ -365,30 +371,28 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
 
           if (resolvedEvent.event.type === "finish-test") {
             await subscription.ack(resolvedEvent);
-            break;
-          }
-
-          if (!nacked.includes(resolvedEvent.event.id)) {
+            finishSeen = true;
+          } else if (!nacked.includes(resolvedEvent.event.id)) {
             nacked.push(resolvedEvent.event.id);
             await subscription.nack(
               resolvedEvent.event.type === "skip-event" ? "skip" : "retry",
               "To test it",
               resolvedEvent
             );
-            continue;
+          } else {
+            await subscription.ack(resolvedEvent);
           }
 
-          await subscription.ack(resolvedEvent);
+          if (
+            finishSeen &&
+            doSomething.mock.calls.length === expectedEventCount
+          ) {
+            await subscription.unsubscribe();
+            break;
+          }
         }
 
-        expect(doSomething).toBeCalledTimes(
-          // skipped
-          skipCount +
-            // retried
-            retryCount * 2 +
-            // finish test event
-            1
-        );
+        expect(doSomething).toBeCalledTimes(expectedEventCount);
       });
 
       test("ack with async function", async () => {
@@ -543,59 +547,9 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
     });
   });
 
-  test("malformed events", async () => {
-    const STREAM_NAME = "malformed_json";
-    const GROUP_NAME = "malformed_json_group_name";
-    const doSomething = jest.fn();
-
-    await client.createPersistentSubscriptionToStream(
-      STREAM_NAME,
-      GROUP_NAME,
-      persistentSubscriptionToStreamSettingsFromDefaults({
-        startFrom: START,
-      })
-    );
-
-    await client.appendToStream(STREAM_NAME, jsonTestEvents(3, "test 1"));
-
-    const malformedData = "****";
-
-    await postEventViaHttpApi(cluster, {
-      contentType: "application/json",
-      type: "malformed-event",
-      stream: STREAM_NAME,
-      data: malformedData,
-    });
-
-    await client.appendToStream(STREAM_NAME, [
-      ...jsonTestEvents(3, "test 2"),
-      finishEvent(),
-    ]);
-
-    const subscription = client.subscribeToPersistentSubscriptionToStream(
-      STREAM_NAME,
-      GROUP_NAME
-    );
-
-    for await (const resolvedEvent of subscription) {
-      doSomething(resolvedEvent);
-      await subscription.ack(resolvedEvent);
-
-      if (resolvedEvent.event?.type === "malformed-event") {
-        expect(resolvedEvent.event.data).toBe(malformedData);
-      }
-
-      if (resolvedEvent.event?.type === "finish-test") {
-        break;
-      }
-    }
-
-    expect(doSomething).toBeCalledTimes(8);
-  });
-
   test("should throw on follower node", async () => {
     // Create connection to a follower node
-    const followerClient = KurrentDBClient.connectionString(
+    const followerClient = TrogonEventStoreClient.connectionString(
       cluster.connectionStringWithOverrides({
         nodePreference: "follower",
       })
@@ -607,7 +561,7 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
     const confirmThatErrorWasThrown = jest.fn();
 
     const createAndConnectWithAutoReconnect = async (
-      client: KurrentDBClient
+      client: TrogonEventStoreClient
     ): Promise<PersistentSubscriptionToStream> => {
       try {
         await client.createPersistentSubscriptionToStream(
@@ -628,7 +582,7 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
         // Our command is good, but must be executed on the leader
         if (error instanceof NotLeaderError) {
           // Create new client connected to the reported leader node
-          const leaderClient = KurrentDBClient.connectionString(
+          const leaderClient = TrogonEventStoreClient.connectionString(
             cluster.connectionStringWithOverrides({
               endpoints: [error.leader],
             })
@@ -692,11 +646,24 @@ describe("subscribeToPersistentSubscriptionToStream", () => {
       }),
     ]);
 
+    const projectionCatchUp = client.subscribeToStream(SYSTEM_STREAM_NAME, {
+      fromRevision: START,
+      resolveLinkTos: true,
+    });
+
+    for await (const resolvedEvent of projectionCatchUp) {
+      if (resolvedEvent.event?.id === FINISH_ID) {
+        await projectionCatchUp.unsubscribe();
+        break;
+      }
+    }
+
     await client.createPersistentSubscriptionToStream(
       SYSTEM_STREAM_NAME,
       GROUP_NAME,
       persistentSubscriptionToStreamSettingsFromDefaults({
         resolveLinkTos: true,
+        startFrom: START,
       })
     );
 

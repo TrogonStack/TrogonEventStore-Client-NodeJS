@@ -1,10 +1,10 @@
 import type { ServiceError } from "@grpc/grpc-js";
 
-import { ProjectionsClient } from "../../generated/kurrentdb/protocols/v1/projectionmanagement_grpc_pb";
+import { ProjectionsClient } from "../../generated/event_store/protocols/v1/projectionmanagement_grpc_pb";
 import {
   StatisticsReq,
   StatisticsResp,
-} from "../../generated/kurrentdb/protocols/v1/projectionmanagement_pb";
+} from "../../generated/event_store/protocols/v1/projectionmanagement_pb";
 
 import { Client } from "../Client";
 import type { BaseOptions, ProjectionDetails } from "../types";
