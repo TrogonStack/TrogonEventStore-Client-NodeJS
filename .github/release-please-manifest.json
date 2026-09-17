@@ -1,4 +1,4 @@
 {
-  "packages/db-client": "0.0.1",
-  "packages/opentelemetry": "0.0.1"
+  "packages/db-client": "0.1.0",
+  "packages/opentelemetry": "0.1.0"
 }

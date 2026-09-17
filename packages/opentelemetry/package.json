@@ -1,6 +1,6 @@
 {
   "name": "@trogonstack/trogon-eventstore-opentelemetry",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "OpenTelemetry instrumentation for the TrogonEventStore Node.js client",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
