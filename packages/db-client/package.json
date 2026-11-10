@@ -1,6 +1,6 @@
 {
   "name": "@trogonstack/trogon-eventstore-client",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "TrogonEventStore gRPC client for Node.js",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
